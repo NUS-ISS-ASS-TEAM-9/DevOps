@@ -1,5 +1,6 @@
-# deoxys-devops/.github/workflows/build-and-deploy.yml
-name: Reusable Build and Deploy Workflow
+# Devops/.github/workflows/build-and-deploy.yml
+
+name: Build and Deploy Java Spring Boot Service
 
 on:
   workflow_call:
@@ -40,22 +41,27 @@ jobs:
 
       - name: Set up gcloud CLI
         uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: ${{ secrets.GCP_PROJECT_ID }}
+          install_components: 'gke-gcloud-auth-plugin'
 
       - name: Build application
         run: |
           cd ${{ inputs.service-name }}
           ./mvnw clean package -DskipTests
 
-      - name: Build and Push Docker Image
+      - name: Build and Push Docker Image to Artifact Registry
         run: |
           cd ${{ inputs.service-name }}
-          docker build -f ${{ inputs.dockerfile-path }} -t asia-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/deoxys-repo/${{ inputs.service-name }}:$GITHUB_SHA .
-          docker push asia-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/deoxys-repo/${{ inputs.service-name }}:$GITHUB_SHA
+          docker build -f ${{ inputs.dockerfile-path }} -t asia-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/devops/${{ inputs.service-name }}:$GITHUB_SHA .
+          docker push asia-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/devops/${{ inputs.service-name }}:$GITHUB_SHA
 
       - name: Deploy to Cloud Run
         run: |
           gcloud run deploy ${{ inputs.service-name }} \
-            --image=asia-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/deoxys-repo/${{ inputs.service-name }}:$GITHUB_SHA \
+            --image=asia-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/devops/${{ inputs.service-name }}:$GITHUB_SHA \
             --platform=managed \
             --region=${{ secrets.GCP_REGION }} \
-            --allow-unauthenticated
+            --allow-unauthenticated \
+            --min-instances=0 \
+            --max-instances=2
