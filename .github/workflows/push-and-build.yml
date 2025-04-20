@@ -7,7 +7,7 @@ on:
       service-name:
         required: true
         type: string
-    secrets:
+    #secrets:
       # Secrets not needed unless accessing GCP
       # Leave empty for build/test only
 
