@@ -1,6 +1,6 @@
 # Devops/.github/workflows/build-and-deploy.yml
 
-name: Build and Deploy Java Spring Boot Service
+name: Build and Deploy Java Spring Boot Service to GKE
 
 on:
   workflow_call:
@@ -18,6 +18,8 @@ on:
       GCP_PROJECT_ID:
         required: true
       GCP_REGION:
+        required: true
+      GCP_CLUSTER_NAME:
         required: true
 
 jobs:
@@ -45,6 +47,10 @@ jobs:
           project_id: ${{ secrets.GCP_PROJECT_ID }}
           install_components: 'gke-gcloud-auth-plugin'
 
+      - name: Set up kubectl
+        run: |
+          gcloud container clusters get-credentials ${{ secrets.GCP_CLUSTER_NAME }} --region ${{ secrets.GCP_REGION }} --project ${{ secrets.GCP_PROJECT_ID }}
+
       - name: Build application
         run: |
           cd ${{ inputs.service-name }}
@@ -56,12 +62,47 @@ jobs:
           docker build -f ${{ inputs.dockerfile-path }} -t asia-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/devops/${{ inputs.service-name }}:$GITHUB_SHA .
           docker push asia-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/devops/${{ inputs.service-name }}:$GITHUB_SHA
 
-      - name: Deploy to Cloud Run
+      - name: Deploy to GKE
         run: |
-          gcloud run deploy ${{ inputs.service-name }} \
-            --image=asia-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/devops/${{ inputs.service-name }}:$GITHUB_SHA \
-            --platform=managed \
-            --region=${{ secrets.GCP_REGION }} \
-            --allow-unauthenticated \
-            --min-instances=0 \
-            --max-instances=2
+          # Create a temporary deployment.yaml with correct image
+          cat <<EOF > deployment.yaml
+          apiVersion: apps/v1
+          kind: Deployment
+          metadata:
+            name: ${{ inputs.service-name }}
+          spec:
+            replicas: 2
+            selector:
+              matchLabels:
+                app: ${{ inputs.service-name }}
+            template:
+              metadata:
+                labels:
+                  app: ${{ inputs.service-name }}
+              spec:
+                containers:
+                - name: ${{ inputs.service-name }}
+                  image: asia-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/devops/${{ inputs.service-name }}:${{ github.sha }}
+                  ports:
+                  - containerPort: 8080
+          EOF
+
+          # Create a temporary service.yaml
+          cat <<EOF > service.yaml
+          apiVersion: v1
+          kind: Service
+          metadata:
+            name: ${{ inputs.service-name }}
+          spec:
+            type: LoadBalancer
+            selector:
+              app: ${{ inputs.service-name }}
+            ports:
+            - protocol: TCP
+              port: 80
+              targetPort: 8080
+          EOF
+
+          # Apply to GKE
+          kubectl apply -f deployment.yaml
+          kubectl apply -f service.yaml
