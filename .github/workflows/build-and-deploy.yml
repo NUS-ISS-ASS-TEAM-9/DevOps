@@ -1,5 +1,3 @@
-# Devops/.github/workflows/build-and-deploy.yml
-
 name: Build and Deploy Java Spring Boot Service to GKE
 
 on:
@@ -23,18 +21,18 @@ on:
         required: true
 
 jobs:
-  build-and-deploy:
+  build-test:
+    uses: NUS-ISS-ASS-TEAM-9/Devops/.github/workflows/build-steps.yml@main
+    with:
+      service-name: ${{ inputs.service-name }}
+
+  deploy:
+    needs: build-test
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
-      - name: Set up JDK 17
-        uses: actions/setup-java@v3
-        with:
-          java-version: '17'
-          distribution: 'temurin'
 
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v2
@@ -50,11 +48,6 @@ jobs:
       - name: Set up kubectl
         run: |
           gcloud container clusters get-credentials ${{ secrets.GCP_CLUSTER_NAME }} --region ${{ secrets.GCP_REGION }} --project ${{ secrets.GCP_PROJECT_ID }}
-
-      - name: Build application
-        run: |
-          cd ${{ inputs.service-name }}
-          ./mvnw clean package -DskipTests
 
       - name: Build and Push Docker Image to Artifact Registry
         run: |
