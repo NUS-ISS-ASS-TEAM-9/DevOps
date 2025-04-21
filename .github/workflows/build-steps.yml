@@ -30,9 +30,6 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-maven-
 
-      - name: Make mvnw executable
-        run: chmod +x ${{ inputs.service-name }}/mvnw
-
       - name: Build and Run Tests
         run: |
           cd ${{ inputs.service-name }}
