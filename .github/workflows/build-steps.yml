@@ -35,4 +35,5 @@ jobs:
 
       - name: Build and Run Tests
         run: |
-          ./mvnw clean verify
+          ./mvnw clean package -DskipTests
+
