@@ -29,6 +29,9 @@ jobs:
           key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
           restore-keys: |
             ${{ runner.os }}-maven-
+     
+      - name: Fix mvnw permissions
+        run: chmod +x mvnw
 
       - name: Build and Run Tests
         run: |
