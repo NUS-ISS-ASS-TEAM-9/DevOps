@@ -40,6 +40,9 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
+      - name: Fix mvnw permissions
+        run: chmod +x mvnw
+
       - name: Build JAR with Maven
         run: ./mvnw clean package -DskipTests
 
