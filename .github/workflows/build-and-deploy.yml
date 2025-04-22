@@ -66,11 +66,14 @@ jobs:
 
       - name: Build and Push Docker Image to Artifact Registry
         run: |
-          SERVICE_NAME_LOWERCASE=$(echo "${{ inputs.service-name }}" | tr '[:upper:]' '[:lower:]')
-          
-          docker build -f ${{ inputs.dockerfile-path }} -t asia-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/devops/${SERVICE_NAME_LOWERCASE}:$GITHUB_SHA .
-          docker push asia-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/devops/${SERVICE_NAME_LOWERCASE}:$GITHUB_SHA
+            SERVICE_NAME_LOWERCASE=$(echo "${{ inputs.service-name }}" | tr '[:upper:]' '[:lower:]')
+            REGION_URL="${{ secrets.GCP_REGION }}-docker.pkg.dev"
 
+            docker build -f ${{ inputs.dockerfile-path }} \
+            -t ${REGION_URL}/${{ secrets.GCP_PROJECT_ID }}/devops/${SERVICE_NAME_LOWERCASE}:$GITHUB_SHA .
+
+            docker push ${REGION_URL}/${{ secrets.GCP_PROJECT_ID }}/devops/${SERVICE_NAME_LOWERCASE}:$GITHUB_SHA
+            
       - name: Deploy to GKE
         run: |
           SERVICE_NAME_LOWERCASE=$(echo "${{ inputs.service-name }}" | tr '[:upper:]' '[:lower:]')
