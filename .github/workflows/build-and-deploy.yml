@@ -58,25 +58,29 @@ jobs:
           install_components: 'gke-gcloud-auth-plugin'
 
       - name: Configure Docker to use gcloud credentials
-        run: gcloud auth configure-docker asia-docker.pkg.dev --quiet
+        run: |
+          gcloud auth configure-docker ${{ secrets.GCP_REGION }}-docker.pkg.dev --quiet
 
       - name: Set up kubectl
         run: |
-          gcloud container clusters get-credentials ${{ secrets.GCP_CLUSTER_NAME }} --region ${{ secrets.GCP_REGION }} --project ${{ secrets.GCP_PROJECT_ID }}
+          gcloud container clusters get-credentials ${{ secrets.GCP_CLUSTER_NAME }} \
+            --region ${{ secrets.GCP_REGION }} \
+            --project ${{ secrets.GCP_PROJECT_ID }}
 
       - name: Build and Push Docker Image to Artifact Registry
         run: |
-            SERVICE_NAME_LOWERCASE=$(echo "${{ inputs.service-name }}" | tr '[:upper:]' '[:lower:]')
-            REGION_URL="${{ secrets.GCP_REGION }}-docker.pkg.dev"
+          SERVICE_NAME_LOWERCASE=$(echo "${{ inputs.service-name }}" | tr '[:upper:]' '[:lower:]')
+          REGION_URL="${{ secrets.GCP_REGION }}-docker.pkg.dev"
 
-            docker build -f ${{ inputs.dockerfile-path }} \
+          docker build -f ${{ inputs.dockerfile-path }} \
             -t ${REGION_URL}/${{ secrets.GCP_PROJECT_ID }}/devops/${SERVICE_NAME_LOWERCASE}:$GITHUB_SHA .
 
-            docker push ${REGION_URL}/${{ secrets.GCP_PROJECT_ID }}/devops/${SERVICE_NAME_LOWERCASE}:$GITHUB_SHA
-            
+          docker push ${REGION_URL}/${{ secrets.GCP_PROJECT_ID }}/devops/${SERVICE_NAME_LOWERCASE}:$GITHUB_SHA
+
       - name: Deploy to GKE
         run: |
           SERVICE_NAME_LOWERCASE=$(echo "${{ inputs.service-name }}" | tr '[:upper:]' '[:lower:]')
+          REGION_URL="${{ secrets.GCP_REGION }}-docker.pkg.dev"
 
           # Create a temporary deployment.yaml with correct image
           cat <<EOF > deployment.yaml
@@ -96,7 +100,7 @@ jobs:
               spec:
                 containers:
                 - name: ${SERVICE_NAME_LOWERCASE}
-                  image: asia-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/devops/${SERVICE_NAME_LOWERCASE}:${GITHUB_SHA}
+                  image: ${REGION_URL}/${{ secrets.GCP_PROJECT_ID }}/devops/${SERVICE_NAME_LOWERCASE}:${GITHUB_SHA}
                   ports:
                   - containerPort: 8080
           EOF
