@@ -57,6 +57,9 @@ jobs:
           project_id: ${{ secrets.GCP_PROJECT_ID }}
           install_components: 'gke-gcloud-auth-plugin'
 
+      - name: Configure Docker to use gcloud credentials
+        run: gcloud auth configure-docker asia-docker.pkg.dev --quiet
+
       - name: Set up kubectl
         run: |
           gcloud container clusters get-credentials ${{ secrets.GCP_CLUSTER_NAME }} --region ${{ secrets.GCP_REGION }} --project ${{ secrets.GCP_PROJECT_ID }}
