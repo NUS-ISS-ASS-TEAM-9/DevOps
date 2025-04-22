@@ -1,32 +1,42 @@
 name: Build and Deploy Java Spring Boot Service
 
 on:
-  push:
-    branches-ignore:
-      - main
+  workflow_call:
+    inputs:
+      service-name:
+        required: true
+        type: string
+      container-port:
+        required: false
+        type: string
+        default: "8080"
+    secrets:
+      GCP_SA_KEY:
+        required: true
+      GCP_PROJECT_ID:
+        required: true
+      GCP_REGION:
+        required: true
+      GCP_CLUSTER_NAME:
+        required: true
 
 jobs:
   build-test:
     uses: NUS-ISS-ASS-TEAM-9/Devops/.github/workflows/build-steps.yml@main
     with:
-      service-name: AuthService
-
-  setup-cloud:
-    needs: build-test
-    uses: NUS-ISS-ASS-TEAM-9/Devops/.github/workflows/setup-cloud.yml@main
-    secrets: inherit
+      service-name: ${{ inputs.service-name }}
 
   docker-build-push:
-    needs: setup-cloud
+    needs: build-test
     uses: NUS-ISS-ASS-TEAM-9/Devops/.github/workflows/docker-build-push.yml@main
     with:
-      service-name: AuthService
+      service-name: ${{ inputs.service-name }}
     secrets: inherit
 
   deploy-to-gke:
     needs: docker-build-push
     uses: NUS-ISS-ASS-TEAM-9/Devops/.github/workflows/deploy-to-gke.yml@main
     with:
-      service-name: AuthService
-      container-port: "8080"
+      service-name: ${{ inputs.service-name }}
+      container-port: ${{ inputs.container-port }}
     secrets: inherit

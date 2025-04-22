@@ -15,11 +15,32 @@ on:
         required: true
       GCP_REGION:
         required: true
+      GCP_SA_KEY:
+        required: true
+      GCP_CLUSTER_NAME:
+        required: true
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Set up gcloud CLI
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: ${{ secrets.GCP_PROJECT_ID }}
+          install_components: 'gke-gcloud-auth-plugin'
+
+      - name: Set up kubectl
+        run: |
+          gcloud container clusters get-credentials ${{ secrets.GCP_CLUSTER_NAME }} \
+            --region ${{ secrets.GCP_REGION }} \
+            --project ${{ secrets.GCP_PROJECT_ID }}
+
       - name: Deploy to GKE
         run: |
           SERVICE_NAME_LOWERCASE=$(echo "${{ inputs.service-name }}" | tr '[:upper:]' '[:lower:]')
@@ -64,4 +85,3 @@ jobs:
 
           kubectl apply -f deployment.yaml
           kubectl apply -f service.yaml
-          
