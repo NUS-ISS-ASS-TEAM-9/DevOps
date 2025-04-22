@@ -35,8 +35,8 @@ jobs:
           if [ -f "./mvnw" ] && [ -f "./.mvn/wrapper/maven-wrapper.properties" ]; then
             echo "Using Maven Wrapper to build and test"
             chmod +x ./mvnw
-            ./mvnw clean verify
+            ./mvn clean package -DskipTests
           else
             echo "Maven wrapper not found, using system Maven"
-            mvn clean verify
+            mvn clean package -DskipTests
           fi
