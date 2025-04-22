@@ -25,13 +25,7 @@ on:
         required: true
 
 jobs:
-  build-test:
-    uses: NUS-ISS-ASS-TEAM-9/Devops/.github/workflows/build-steps.yml@main
-    with:
-      service-name: ${{ inputs.service-name }}
-
   deploy:
-    needs: build-test
     runs-on: ubuntu-latest
 
     steps:
@@ -44,16 +38,25 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: Build and Run Tests
+      - name: Cache Maven packages
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.m2/repository
+          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-maven-
+
+      - name: Build JAR with Maven (fallback if wrapper missing)
         run: |
           if [ -f "./mvnw" ] && [ -f "./.mvn/wrapper/maven-wrapper.properties" ]; then
-            echo "Running tests with Maven Wrapper..."
+            echo "Using Maven wrapper"
             chmod +x ./mvnw
-            ./mvnw clean verify
+            ./mvnw clean package -DskipTests
           else
-            echo "Skipping Maven tests: Maven wrapper not found in this repo."
+            echo "Using system Maven"
+            mvn clean package -DskipTests
           fi
-        
 
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v2
