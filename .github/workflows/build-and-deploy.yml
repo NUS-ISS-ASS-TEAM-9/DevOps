@@ -44,18 +44,17 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: Fix mvnw permissions
-        run: chmod +x mvnw
-
-      - name: Build JAR with Maven (if mvnw exists)
+      - name: Build and Run Tests (safely)
         run: |
           if [ -f "./mvnw" ] && [ -f "./.mvn/wrapper/maven-wrapper.properties" ]; then
+            echo "Running tests with Maven Wrapper..."
             chmod +x ./mvnw
-            ./mvnw clean package -DskipTests
+            ./mvnw clean verify
           else
-            echo "Skipping Maven build: ./mvnw or wrapper config not found."
+            echo "Skipping Maven tests: Maven wrapper not found in this repo."
           fi
-      
+        
+
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v2
         with:
