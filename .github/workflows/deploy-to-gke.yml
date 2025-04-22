@@ -1,0 +1,66 @@
+name: Deploy to GKE
+
+on:
+  workflow_call:
+    inputs:
+      service-name:
+        required: true
+        type: string
+      container-port:
+        required: false
+        type: string
+        default: "8080"
+    secrets:
+      GCP_PROJECT_ID:
+        required: true
+      GCP_REGION:
+        required: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to GKE
+        run: |
+          SERVICE_NAME_LOWERCASE=$(echo "${{ inputs.service-name }}" | tr '[:upper:]' '[:lower:]')
+          REGION_URL="${{ secrets.GCP_REGION }}-docker.pkg.dev"
+
+          cat <<EOF > deployment.yaml
+          apiVersion: apps/v1
+          kind: Deployment
+          metadata:
+            name: ${SERVICE_NAME_LOWERCASE}
+          spec:
+            replicas: 1
+            selector:
+              matchLabels:
+                app: ${SERVICE_NAME_LOWERCASE}
+            template:
+              metadata:
+                labels:
+                  app: ${SERVICE_NAME_LOWERCASE}
+              spec:
+                containers:
+                - name: ${SERVICE_NAME_LOWERCASE}
+                  image: ${REGION_URL}/${{ secrets.GCP_PROJECT_ID }}/devops/${SERVICE_NAME_LOWERCASE}:${GITHUB_SHA}
+                  ports:
+                  - containerPort: ${{ inputs.container-port }}
+          EOF
+
+          cat <<EOF > service.yaml
+          apiVersion: v1
+          kind: Service
+          metadata:
+            name: ${SERVICE_NAME_LOWERCASE}
+          spec:
+            type: LoadBalancer
+            selector:
+              app: ${SERVICE_NAME_LOWERCASE}
+            ports:
+            - protocol: TCP
+              port: 80
+              targetPort: ${{ inputs.container-port }}
+          EOF
+
+          kubectl apply -f deployment.yaml
+          kubectl apply -f service.yaml

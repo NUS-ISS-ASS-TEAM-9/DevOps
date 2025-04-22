@@ -1,0 +1,34 @@
+name: Build and Push Docker Image
+
+on:
+  workflow_call:
+    inputs:
+      service-name:
+        required: true
+        type: string
+      dockerfile-path:
+        required: false
+        type: string
+        default: Dockerfile
+    secrets:
+      GCP_PROJECT_ID:
+        required: true
+      GCP_REGION:
+        required: true
+
+jobs:
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Build and Push Docker Image
+        run: |
+          SERVICE_NAME_LOWERCASE=$(echo "${{ inputs.service-name }}" | tr '[:upper:]' '[:lower:]')
+          REGION_URL="${{ secrets.GCP_REGION }}-docker.pkg.dev"
+
+          docker build -f ${{ inputs.dockerfile-path }} \
+            -t ${REGION_URL}/${{ secrets.GCP_PROJECT_ID }}/devops/${SERVICE_NAME_LOWERCASE}:$GITHUB_SHA .
+
+          docker push ${REGION_URL}/${{ secrets.GCP_PROJECT_ID }}/devops/${SERVICE_NAME_LOWERCASE}:$GITHUB_SHA
