@@ -44,7 +44,7 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: Build and Run Tests (safely)
+      - name: Build and Run Tests
         run: |
           if [ -f "./mvnw" ] && [ -f "./.mvn/wrapper/maven-wrapper.properties" ]; then
             echo "Running tests with Maven Wrapper..."
