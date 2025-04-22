@@ -18,7 +18,7 @@ jobs:
 
   docker-build-push:
     needs: setup-cloud
-    uses: NUS-ISS-ASS-TEAM-9/Devops/.github/workflows/build-and-push.yml@main
+    uses: NUS-ISS-ASS-TEAM-9/Devops/.github/workflows/docker-build-push.yml@main
     with:
       service-name: AuthService
     secrets: inherit
