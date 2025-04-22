@@ -52,54 +52,53 @@ jobs:
       - name: Build and Push Docker Image to Artifact Registry
         run: |
           SERVICE_NAME_LOWERCASE=$(echo "${{ inputs.service-name }}" | tr '[:upper:]' '[:lower:]')
-          cd ${{ inputs.service-name }}
+          
           docker build -f ${{ inputs.dockerfile-path }} -t asia-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/devops/${SERVICE_NAME_LOWERCASE}:$GITHUB_SHA .
           docker push asia-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/devops/${SERVICE_NAME_LOWERCASE}:$GITHUB_SHA
 
       - name: Deploy to GKE
         run: |
           SERVICE_NAME_LOWERCASE=$(echo "${{ inputs.service-name }}" | tr '[:upper:]' '[:lower:]')
-      
+
           # Create a temporary deployment.yaml with correct image
           cat <<EOF > deployment.yaml
           apiVersion: apps/v1
           kind: Deployment
           metadata:
-            name: ${{ inputs.service-name }}
+            name: ${SERVICE_NAME_LOWERCASE}
           spec:
             replicas: 2
             selector:
               matchLabels:
-                app: ${{ inputs.service-name }}
+                app: ${SERVICE_NAME_LOWERCASE}
             template:
               metadata:
                 labels:
-                  app: ${{ inputs.service-name }}
+                  app: ${SERVICE_NAME_LOWERCASE}
               spec:
                 containers:
-                - name: ${{ inputs.service-name }}
-                  image: asia-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/devops/${SERVICE_NAME_LOWERCASE}:${{ github.sha }}
+                - name: ${SERVICE_NAME_LOWERCASE}
+                  image: asia-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/devops/${SERVICE_NAME_LOWERCASE}:${GITHUB_SHA}
                   ports:
                   - containerPort: 8080
           EOF
-      
+
           # Create a temporary service.yaml
           cat <<EOF > service.yaml
           apiVersion: v1
           kind: Service
           metadata:
-            name: ${{ inputs.service-name }}
+            name: ${SERVICE_NAME_LOWERCASE}
           spec:
             type: LoadBalancer
             selector:
-              app: ${{ inputs.service-name }}
+              app: ${SERVICE_NAME_LOWERCASE}
             ports:
             - protocol: TCP
               port: 80
               targetPort: 8080
           EOF
-      
+
           # Apply to GKE
           kubectl apply -f deployment.yaml
           kubectl apply -f service.yaml
-      
