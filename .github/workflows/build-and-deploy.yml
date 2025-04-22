@@ -89,7 +89,7 @@ jobs:
           metadata:
             name: ${SERVICE_NAME_LOWERCASE}
           spec:
-            replicas: 2
+            replicas: 1
             selector:
               matchLabels:
                 app: ${SERVICE_NAME_LOWERCASE}
@@ -101,6 +101,13 @@ jobs:
                 containers:
                 - name: ${SERVICE_NAME_LOWERCASE}
                   image: ${REGION_URL}/${{ secrets.GCP_PROJECT_ID }}/devops/${SERVICE_NAME_LOWERCASE}:${GITHUB_SHA}
+                  resources:
+                    requests:
+                      cpu: "100m"
+                      memory: "128Mi"
+                    limits:
+                      cpu: "250m"
+                      memory: "256Mi"
                   ports:
                   - containerPort: 8080
           EOF
