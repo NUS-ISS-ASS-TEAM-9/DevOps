@@ -2,7 +2,7 @@ name: Build and Deploy Java Spring Boot Service
 
 on:
   push:
-    branches:
+    branches-ignore:
       - main
 
 jobs:
