@@ -10,6 +10,10 @@ on:
         required: false
         type: string
         default: Dockerfile
+      container-port:
+        required: false
+        type: string
+        default: "8080"
     secrets:
       GCP_SA_KEY:
         required: true
@@ -82,7 +86,6 @@ jobs:
           SERVICE_NAME_LOWERCASE=$(echo "${{ inputs.service-name }}" | tr '[:upper:]' '[:lower:]')
           REGION_URL="${{ secrets.GCP_REGION }}-docker.pkg.dev"
 
-          # Create a temporary deployment.yaml with correct image
           cat <<EOF > deployment.yaml
           apiVersion: apps/v1
           kind: Deployment
@@ -109,10 +112,9 @@ jobs:
                       cpu: "100m"
                       memory: "256Mi"
                   ports:
-                  - containerPort: 8080
+                  - containerPort: ${{ inputs.container-port }}
           EOF
 
-          # Create a temporary service.yaml
           cat <<EOF > service.yaml
           apiVersion: v1
           kind: Service
@@ -125,9 +127,8 @@ jobs:
             ports:
             - protocol: TCP
               port: 80
-              targetPort: 8080
+              targetPort: ${{ inputs.container-port }}
           EOF
 
-          # Apply to GKE
           kubectl apply -f deployment.yaml
           kubectl apply -f service.yaml
