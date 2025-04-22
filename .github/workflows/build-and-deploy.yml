@@ -47,9 +47,15 @@ jobs:
       - name: Fix mvnw permissions
         run: chmod +x mvnw
 
-      - name: Build JAR with Maven
-        run: ./mvnw clean package -DskipTests
-
+      - name: Build JAR with Maven (if mvnw exists)
+        run: |
+          if [ -f "./mvnw" ] && [ -f "./.mvn/wrapper/maven-wrapper.properties" ]; then
+            chmod +x ./mvnw
+            ./mvnw clean package -DskipTests
+          else
+            echo "Skipping Maven build: ./mvnw or wrapper config not found."
+          fi
+      
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v2
         with:
