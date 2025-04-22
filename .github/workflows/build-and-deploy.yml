@@ -58,6 +58,8 @@ jobs:
 
       - name: Deploy to GKE
         run: |
+          SERVICE_NAME_LOWERCASE=$(echo "${{ inputs.service-name }}" | tr '[:upper:]' '[:lower:]')
+      
           # Create a temporary deployment.yaml with correct image
           cat <<EOF > deployment.yaml
           apiVersion: apps/v1
@@ -76,11 +78,11 @@ jobs:
               spec:
                 containers:
                 - name: ${{ inputs.service-name }}
-                  image: asia-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/devops/${{ inputs.service-name }}:${{ github.sha }}
+                  image: asia-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/devops/${SERVICE_NAME_LOWERCASE}:${{ github.sha }}
                   ports:
                   - containerPort: 8080
           EOF
-
+      
           # Create a temporary service.yaml
           cat <<EOF > service.yaml
           apiVersion: v1
@@ -96,7 +98,8 @@ jobs:
               port: 80
               targetPort: 8080
           EOF
-
+      
           # Apply to GKE
           kubectl apply -f deployment.yaml
           kubectl apply -f service.yaml
+      
