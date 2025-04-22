@@ -3,10 +3,7 @@ name: Cleanup Google Artifact Registry Images
 on:
   workflow_call:
     inputs:
-      repository:
-        required: true
-        type: string
-      location:
+      service-name:
         required: true
         type: string
       keep-count:
@@ -17,6 +14,8 @@ on:
       GCP_SA_KEY:
         required: true
       GCP_PROJECT_ID:
+        required: true
+      GCP_REGION:
         required: true
 
 jobs:
@@ -35,13 +34,13 @@ jobs:
 
       - name: Cleanup old image tags in Artifact Registry
         run: |
-          REPO=${{ inputs.repository }}
-          LOCATION=${{ inputs.location }}
+          REPO=$(echo "${{ inputs.service-name }}" | tr '[:upper:]' '[:lower:]')
+          LOCATION=${{ secrets.GCP_REGION }}
           KEEP=${{ inputs.keep-count }}
 
           echo "Fetching image versions from $REPO in $LOCATION..."
 
-          IMAGE_PATH=$LOCATION-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/$REPO
+          IMAGE_PATH=$LOCATION-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/devops/$REPO
 
           gcloud artifacts docker images list $IMAGE_PATH --sort-by=~CREATE_TIME \
             --format="value(TAGS)" | grep -v "<none>" | while read TAG; do
@@ -51,4 +50,4 @@ jobs:
             gcloud artifacts docker images delete "$IMAGE_PATH:$OLD_TAG" --quiet --delete-tags
           done
 
-          echo "Cleanup complete."
+          echo "Cleanup completed."
