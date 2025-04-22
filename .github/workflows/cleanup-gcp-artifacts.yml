@@ -1,0 +1,54 @@
+name: Cleanup Google Artifact Registry Images
+
+on:
+  workflow_call:
+    inputs:
+      repository:
+        required: true
+        type: string
+      location:
+        required: true
+        type: string
+      keep-count:
+        required: false
+        type: number
+        default: 5
+    secrets:
+      GCP_SA_KEY:
+        required: true
+      GCP_PROJECT_ID:
+        required: true
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Authenticate with Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Install gcloud CLI
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: ${{ secrets.GCP_PROJECT_ID }}
+
+      - name: Cleanup old image tags in Artifact Registry
+        run: |
+          REPO=${{ inputs.repository }}
+          LOCATION=${{ inputs.location }}
+          KEEP=${{ inputs.keep-count }}
+
+          echo "Fetching image versions from $REPO in $LOCATION..."
+
+          IMAGE_PATH=$LOCATION-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/$REPO
+
+          gcloud artifacts docker images list $IMAGE_PATH --sort-by=~CREATE_TIME \
+            --format="value(TAGS)" | grep -v "<none>" | while read TAG; do
+            echo "$TAG"
+          done | tail -n +$(($KEEP + 1)) | while read OLD_TAG; do
+            echo "Deleting tag $OLD_TAG..."
+            gcloud artifacts docker images delete "$IMAGE_PATH:$OLD_TAG" --quiet --delete-tags
+          done
+
+          echo "Cleanup complete."
