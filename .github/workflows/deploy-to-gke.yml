@@ -40,6 +40,12 @@ jobs:
           gcloud container clusters get-credentials ${{ secrets.GCP_CLUSTER_NAME }} \
             --region ${{ secrets.GCP_REGION }} \
             --project ${{ secrets.GCP_PROJECT_ID }}
+
+      - name: Checkout DevOps templates
+        uses: actions/checkout@v4
+        with:
+            repository: NUS-ISS-ASS-TEAM-9/Devops
+            path: devops-templates
       
       - name: Inject DB secrets/configmap
         run: |
@@ -48,8 +54,9 @@ jobs:
           export DB_HOST="${{ secrets.DB_HOST }}"
           export DB_PORT="${{ secrets.DB_PORT }}"
           
-          envsubst < .github/workflows/templates/configmap.yaml > configmap.yaml
-          envsubst < .github/workflows/templates/db-config.yaml > db-config.yaml
+          envsubst < devops-templates/.github/workflows/templates/db-config.yaml > db-config.yaml
+          envsubst < devops-templates/.github/workflows/templates/configmap.yaml > configmap.yaml
+
           
           kubectl apply -f db-config.yaml
           kubectl apply -f configmap.yaml
