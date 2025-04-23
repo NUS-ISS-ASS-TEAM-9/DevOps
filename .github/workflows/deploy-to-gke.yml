@@ -93,7 +93,7 @@ jobs:
                       memory: "256Mi"  # 256MB RAM
                   ports:
                   - containerPort: ${{ inputs.container-port }}
-                  - envFrom: 
+                  envFrom: 
                     - configMapRef:
                         name: configmap
                     - secretRef:
