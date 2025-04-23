@@ -19,6 +19,12 @@ on:
         required: true
       GCP_CLUSTER_NAME:
         required: true
+      CLOUDSQL_CONNECTION_NAME:
+        required: true
+      DB_USERNAME:
+        required: true
+      DB_PASSWORD:
+        required: true
 
 jobs:
   deploy:
@@ -44,20 +50,17 @@ jobs:
       - name: Checkout DevOps templates
         uses: actions/checkout@v4
         with:
-            repository: NUS-ISS-ASS-TEAM-9/Devops
-            path: devops-templates
+          repository: NUS-ISS-ASS-TEAM-9/Devops
+          path: devops-templates
       
       - name: Inject DB secrets/configmap
         run: |
           export DB_USERNAME="${{ secrets.DB_USERNAME }}"
           export DB_PASSWORD="${{ secrets.DB_PASSWORD }}"
-          export DB_HOST="${{ secrets.DB_HOST }}"
-          export DB_PORT="${{ secrets.DB_PORT }}"
           
           envsubst < devops-templates/.github/workflows/templates/db-config.yaml > db-config.yaml
           envsubst < devops-templates/.github/workflows/templates/configmap.yaml > configmap.yaml
 
-          
           kubectl apply -f db-config.yaml
           kubectl apply -f configmap.yaml
 
@@ -86,11 +89,11 @@ jobs:
                   image: ${REGION_URL}/${{ secrets.GCP_PROJECT_ID }}/devops/${SERVICE_NAME_LOWERCASE}:${GITHUB_SHA}
                   resources:
                     requests:
-                      cpu: "50m"       # 0.05 vCPU
-                      memory: "128Mi"  # 128MB RAM
+                      cpu: "50m"
+                      memory: "128Mi"
                     limits:
-                      cpu: "100m"      # 0.1 vCPU
-                      memory: "256Mi"  # 256MB RAM
+                      cpu: "100m"
+                      memory: "256Mi"
                   ports:
                   - containerPort: ${{ inputs.container-port }}
                   envFrom: 
@@ -98,20 +101,21 @@ jobs:
                         name: configmap
                     - secretRef:
                         name: db-config
-              - name: cloudsql-proxy
-                image: gcr.io/cloudsql-docker/gce-proxy:1.33.4
-                command: ["/cloud_sql_proxy",
-                          "-instances=${{ secrets.CLOUDSQL_CONNECTION_NAME }}=tcp:5432",
-                          "-credential_file=/secrets/cloudsql/credentials.json"]
-                volumeMounts:
-                  - name: cloudsql-instance-credentials
-                    mountPath: /secrets/cloudsql
-                    readOnly: true
 
-              volumes:
-              - name: cloudsql-instance-credentials
-                secret:
-                  secretName: cloudsql-instance-key
+                - name: cloudsql-proxy
+                  image: gcr.io/cloudsql-docker/gce-proxy:1.33.4
+                  command: ["/cloud_sql_proxy",
+                            "-instances=${{ secrets.CLOUDSQL_CONNECTION_NAME }}=tcp:5432",
+                            "-credential_file=/secrets/cloudsql/credentials.json"]
+                  volumeMounts:
+                    - name: cloudsql-instance-credentials
+                      mountPath: /secrets/cloudsql
+                      readOnly: true
+
+                volumes:
+                - name: cloudsql-instance-credentials
+                  secret:
+                    secretName: cloudsql-instance-key
           EOF
 
           cat <<EOF > service.yaml
