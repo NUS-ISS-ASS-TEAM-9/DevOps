@@ -98,6 +98,20 @@ jobs:
                         name: configmap
                     - secretRef:
                         name: db-config
+              - name: cloudsql-proxy
+                image: gcr.io/cloudsql-docker/gce-proxy:1.33.4
+                command: ["/cloud_sql_proxy",
+                          "-instances=${{ secrets.CLOUDSQL_CONNECTION_NAME }}=tcp:5432",
+                          "-credential_file=/secrets/cloudsql/credentials.json"]
+                volumeMounts:
+                  - name: cloudsql-instance-credentials
+                    mountPath: /secrets/cloudsql
+                    readOnly: true
+
+              volumes:
+              - name: cloudsql-instance-credentials
+                secret:
+                  secretName: cloudsql-instance-key
           EOF
 
           cat <<EOF > service.yaml
