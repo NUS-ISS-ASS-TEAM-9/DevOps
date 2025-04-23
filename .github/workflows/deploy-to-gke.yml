@@ -57,6 +57,9 @@ jobs:
         run: |
           export DB_USERNAME="${{ secrets.DB_USERNAME }}"
           export DB_PASSWORD="${{ secrets.DB_PASSWORD }}"
+          export DB_HOST="${{ secrets.DB_HOST }}"
+          export DB_PORT="${{ secrets.DB_PORT }}"
+          export DB_NAME="${{ secrets.DB_NAME }}"
           
           envsubst < devops-templates/.github/workflows/templates/db-config.yaml > db-config.yaml
           envsubst < devops-templates/.github/workflows/templates/configmap.yaml > configmap.yaml
@@ -105,7 +108,7 @@ jobs:
                 - name: cloudsql-proxy
                   image: gcr.io/cloudsql-docker/gce-proxy:1.33.4
                   command: ["/cloud_sql_proxy",
-                            "-instances=${{ secrets.CLOUDSQL_CONNECTION_NAME }}=tcp:5432",
+                            "-instances=${{ secrets.CLOUDSQL_CONNECTION_NAME }}=tcp:${{ secrets.DB_PORT }}",
                             "-credential_file=/secrets/cloudsql/credentials.json"]
                   volumeMounts:
                     - name: cloudsql-instance-credentials
