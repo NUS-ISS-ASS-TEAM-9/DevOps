@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: postgres-config
+  namespace: default
+  labels:
+    app: ${SERVICE_NAME_LOWERCASE}
+
+data:
+  spring.datasource.driver-class-name: org.postgresql.Driver
+  spring.jpa.database-platform: org.hibernate.dialect.PostgreSQLDialect

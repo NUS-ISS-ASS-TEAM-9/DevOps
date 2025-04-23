@@ -40,6 +40,17 @@ jobs:
           gcloud container clusters get-credentials ${{ secrets.GCP_CLUSTER_NAME }} \
             --region ${{ secrets.GCP_REGION }} \
             --project ${{ secrets.GCP_PROJECT_ID }}
+      
+      - name: Inject DB secrets/configmap
+        run: |
+          export DB_USERNAME="${{ secrets.DB_USERNAME }}"
+          export DB_PASSWORD="${{ secrets.DB_PASSWORD }}"
+          
+          envsubst < .github/workflows/templates/configmap.yaml > configmap.yaml
+          envsubst < .github/workflows/templates/db-config.yaml > db-config.yaml
+          
+          kubectl apply -f db-config.yaml
+          kubectl apply -f configmap.yaml
 
       - name: Deploy to GKE
         run: |
@@ -73,6 +84,11 @@ jobs:
                       memory: "256Mi"  # 256MB RAM
                   ports:
                   - containerPort: ${{ inputs.container-port }}
+                  - envFrom: 
+                    - configMapRef:
+                        name: configmap
+                    - secretRef:
+                        name: db-config
           EOF
 
           cat <<EOF > service.yaml

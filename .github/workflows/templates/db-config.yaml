@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: postgres-secret
+  namespace: default
+  labels:
+    app: ${SERVICE_NAME_LOWERCASE}
+stringData:
+  spring.datasource.username: "${DB_USERNAME}"
+  spring.datasource.password: "${DB_PASSWORD}"
+  spring.datasource.url: "jdbc:postgresql://${DB_HOST}:${DB_PORT}/${DB_NAME}"
+s
