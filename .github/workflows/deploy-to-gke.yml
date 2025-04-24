@@ -55,6 +55,8 @@ jobs:
       
       - name: Inject DB secrets/configmap
         run: |
+          export SERVICE_NAME_LOWERCASE="${{ inputs.service-name }}" 
+          export SERVICE_PORT="${{ inputs.container-port }}"  
           export DB_USERNAME="${{ secrets.DB_USERNAME }}"
           export DB_PASSWORD="${{ secrets.DB_PASSWORD }}"
           export DB_HOST="${{ secrets.DB_HOST }}"
@@ -88,51 +90,49 @@ jobs:
                   app: ${SERVICE_NAME_LOWERCASE}
               spec:
                 containers:
-                - name: ${SERVICE_NAME_LOWERCASE}
-                  image: ${REGION_URL}/${{ secrets.GCP_PROJECT_ID }}/devops/${SERVICE_NAME_LOWERCASE}:${GITHUB_SHA}
-                  resources:
-                    requests:
-                      cpu: "100m"
-                      memory: "256Mi"
-                    limits:
-                      cpu: "200m"
-                      memory: "512Mi"
-                  ports:
-                  - containerPort: ${{ inputs.container-port }}
-                  envFrom:
-                    - configMapRef:
-                        name: configmap
-                    - secretRef:
-                        name: db-config
-                  livenessProbe:
-                    httpGet:
-                      path: /actuator/health
-                      port: 8083
-                    initialDelaySeconds: 120
-                    periodSeconds: 15
-                    timeoutSeconds: 1
-                    failureThreshold: 5
-                    successThreshold: 1
+                  - name: ${SERVICE_NAME_LOWERCASE}
+                    image: ${REGION_URL}/${{ secrets.GCP_PROJECT_ID }}/devops/${SERVICE_NAME_LOWERCASE}:${GITHUB_SHA}
+                    resources:
+                      requests:
+                        cpu: "100m"
+                        memory: "256Mi"
+                      limits:
+                        cpu: "200m"
+                        memory: "512Mi"
+                    ports:
+                      - containerPort: ${SERVICE_PORT}  # Reference the port dynamically
+                    envFrom:
+                      - configMapRef:
+                          name: configmap  # Reference the ConfigMap created earlier
+                    livenessProbe:
+                      httpGet:
+                        path: /actuator/health
+                        port: ${SERVICE_PORT}  # Use the dynamic port from the ConfigMap
+                      initialDelaySeconds: 120
+                      periodSeconds: 15
+                      timeoutSeconds: 1
+                      failureThreshold: 5
+                      successThreshold: 1
 
-                  readinessProbe:
-                    httpGet:
-                      path: /actuator/health
-                      port: 8083
-                    initialDelaySeconds: 120
-                    periodSeconds: 10
-                    timeoutSeconds: 3
-                    failureThreshold: 5
-                    successThreshold: 1
+                    readinessProbe:
+                      httpGet:
+                        path: /actuator/health
+                        port: ${SERVICE_PORT}  # Use the dynamic port from the ConfigMap
+                      initialDelaySeconds: 120
+                      periodSeconds: 10
+                      timeoutSeconds: 3
+                      failureThreshold: 5
+                      successThreshold: 1
 
-                - name: cloudsql-proxy
-                  image: gcr.io/cloudsql-docker/gce-proxy:1.33.4
-                  command: ["/cloud_sql_proxy",
-                            "-instances=${{ secrets.CLOUDSQL_CONNECTION_NAME }}=tcp:${{ secrets.DB_PORT }}",
-                            "-credential_file=/secrets/cloudsql/credentials.json"]
-                  volumeMounts:
-                    - name: cloudsql-instance-credentials
-                      mountPath: /secrets/cloudsql
-                      readOnly: true
+                  - name: cloudsql-proxy
+                    image: gcr.io/cloudsql-docker/gce-proxy:1.33.4
+                    command: ["/cloud_sql_proxy",
+                              "-instances=${{ secrets.CLOUDSQL_CONNECTION_NAME }}=tcp:${{ secrets.DB_PORT }}",
+                              "-credential_file=/secrets/cloudsql/credentials.json"]
+                    volumeMounts:
+                      - name: cloudsql-instance-credentials
+                        mountPath: /secrets/cloudsql
+                        readOnly: true
 
                 volumes:
                   - name: cloudsql-instance-credentials
@@ -140,25 +140,25 @@ jobs:
                       secretName: cloudsql-instance-key
           EOF
 
-          cat <<EOF > hpa.yaml
-          apiVersion: autoscaling/v2
-          kind: HorizontalPodAutoscaler
-          metadata:
-            name: ${SERVICE_NAME_LOWERCASE}-hpa
-          spec:
-            scaleTargetRef:
-              apiVersion: apps/v1
-              kind: Deployment
-              name: ${SERVICE_NAME_LOWERCASE}
-            minReplicas: 1
-            maxReplicas: 2
-            metrics:
-              - type: Resource
-                resource:
-                  name: cpu
-                  target:
-                    type: Utilization
-                    averageUtilization: 80
+                    cat <<EOF > hpa.yaml
+                    apiVersion: autoscaling/v2
+                    kind: HorizontalPodAutoscaler
+                    metadata:
+                      name: ${SERVICE_NAME_LOWERCASE}-hpa
+                    spec:
+                      scaleTargetRef:
+                        apiVersion: apps/v1
+                        kind: Deployment
+                        name: ${SERVICE_NAME_LOWERCASE}
+                      minReplicas: 1
+                      maxReplicas: 2
+                      metrics:
+                        - type: Resource
+                          resource:
+                            name: cpu
+                            target:
+                              type: Utilization
+                              averageUtilization: 80
           EOF
 
           cat <<EOF > service.yaml
