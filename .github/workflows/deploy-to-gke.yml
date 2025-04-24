@@ -52,7 +52,7 @@ jobs:
         with:
           repository: NUS-ISS-ASS-TEAM-9/Devops
           path: devops-templates
-      
+
       - name: Inject DB secrets/configmap
         run: |
           # Set the service name and port for dynamic substitution
@@ -68,7 +68,7 @@ jobs:
           export DB_HOST="${{ secrets.DB_HOST }}"
           export DB_PORT="${{ secrets.DB_PORT }}"
           export DB_NAME="${{ secrets.DB_NAME }}"
-          
+
           # Substitute the environment variables into the templates
           envsubst < devops-templates/.github/workflows/templates/db-config.yaml > db-config.yaml
           envsubst < devops-templates/.github/workflows/templates/configmap.yaml > configmap.yaml
@@ -99,110 +99,12 @@ jobs:
           export GITHUB_SHA=${{ github.sha }}
 
           # Generate the deployment.yaml using dynamic variables
-          cat <<EOF > deployment.yaml
-          apiVersion: apps/v1
-          kind: Deployment
-          metadata:
-            name: ${SERVICE_NAME_LOWERCASE}
-          spec:
-            replicas: 1
-            selector:
-              matchLabels:
-                app: ${SERVICE_NAME_LOWERCASE}
-            template:
-              metadata:
-                labels:
-                  app: ${SERVICE_NAME_LOWERCASE}
-              spec:
-                containers:
-                  - name: ${SERVICE_NAME_LOWERCASE}
-                    image: ${REGION_URL}/${{ secrets.GCP_PROJECT_ID }}/devops/${SERVICE_NAME_LOWERCASE}:${GITHUB_SHA}
-                    resources:
-                      requests:
-                        cpu: "100m"
-                        memory: "256Mi"
-                      limits:
-                        cpu: "200m"
-                        memory: "512Mi"
-                    ports:
-                      - containerPort: ${SERVICE_PORT}  # Use the dynamic port
-                    envFrom:
-                      - configMapRef:
-                          name: configmap
-                    livenessProbe:
-                      httpGet:
-                        path: /actuator/health
-                        port: ${SERVICE_PORT}  # Use the dynamic port
-                      initialDelaySeconds: 120
-                      periodSeconds: 15
-                      timeoutSeconds: 1
-                      failureThreshold: 5
-                      successThreshold: 1
-                    readinessProbe:
-                      httpGet:
-                        path: /actuator/health
-                        port: ${SERVICE_PORT}  # Use the dynamic port
-                      initialDelaySeconds: 120
-                      periodSeconds: 10
-                      timeoutSeconds: 3
-                      failureThreshold: 5
-                      successThreshold: 1
+          envsubst < devops-templates/.github/workflows/templates/deployment.yaml > deployment.yaml
+          envsubst < devops-templates/.github/workflows/templates/hpa.yaml > hpa.yaml
+          envsubst < devops-templates/.github/workflows/templates/service.yaml > service.yaml
 
-                  - name: cloudsql-proxy
-                    image: gcr.io/cloudsql-docker/gce-proxy:1.33.4
-                    command: ["/cloud_sql_proxy",
-                              "-instances=${{ secrets.CLOUDSQL_CONNECTION_NAME }}=tcp:${{ secrets.DB_PORT }}",
-                              "-credential_file=/secrets/cloudsql/credentials.json"]
-                    volumeMounts:
-                      - name: cloudsql-instance-credentials
-                        mountPath: /secrets/cloudsql
-                        readOnly: true
-
-                volumes:
-                  - name: cloudsql-instance-credentials
-                    secret:
-                      secretName: cloudsql-instance-key
-          EOF
-
-          # Create Horizontal Pod Autoscaler
-          cat <<EOF > hpa.yaml
-          apiVersion: autoscaling/v2
-          kind: HorizontalPodAutoscaler
-          metadata:
-            name: ${SERVICE_NAME_LOWERCASE}-hpa
-          spec:
-            scaleTargetRef:
-              apiVersion: apps/v1
-              kind: Deployment
-              name: ${SERVICE_NAME_LOWERCASE}
-            minReplicas: 1
-            maxReplicas: 2
-            metrics:
-              - type: Resource
-                resource:
-                  name: cpu
-                  target:
-                    type: Utilization
-                    averageUtilization: 80
-          EOF
-
-          # Create the service.yaml
-          cat <<EOF > service.yaml
-          apiVersion: v1
-          kind: Service
-          metadata:
-            name: ${SERVICE_NAME_LOWERCASE}
-          spec:
-            type: LoadBalancer
-            selector:
-              app: ${SERVICE_NAME_LOWERCASE}
-            ports:
-            - protocol: TCP
-              port: 80
-              targetPort: ${{ inputs.container-port }}
-          EOF
-
-          # Apply the generated files
+          # Apply the generated YAML files to the Kubernetes cluster
           kubectl apply -f deployment.yaml
           kubectl apply -f hpa.yaml
           kubectl apply -f service.yaml
+
