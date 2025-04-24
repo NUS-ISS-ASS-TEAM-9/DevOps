@@ -107,15 +107,22 @@ jobs:
                   livenessProbe:
                     httpGet:
                       path: /actuator/health
-                      port: ${{ inputs.container-port }}
+                      port: 8083
                     initialDelaySeconds: 60
                     periodSeconds: 15
+                    timeoutSeconds: 1
+                    failureThreshold: 3
+                    successThreshold: 1
+
                   readinessProbe:
                     httpGet:
                       path: /actuator/health
-                      port: ${{ inputs.container-port }}
+                      port: 8083
                     initialDelaySeconds: 30
                     periodSeconds: 10
+                    timeoutSeconds: 1
+                    failureThreshold: 3
+                    successThreshold: 1
 
                 - name: cloudsql-proxy
                   image: gcr.io/cloudsql-docker/gce-proxy:1.33.4
