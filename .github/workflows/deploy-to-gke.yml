@@ -55,25 +55,38 @@ jobs:
       
       - name: Inject DB secrets/configmap
         run: |
+          # Set the service name and port for dynamic substitution
           export SERVICE_NAME_LOWERCASE="${{ inputs.service-name }}" 
           export SERVICE_PORT="${{ inputs.container-port }}"  
+
+          # Debug the port value
+          echo "SERVICE_PORT=${SERVICE_PORT}"  # This helps confirm the value
+
+          # Export the database secrets
           export DB_USERNAME="${{ secrets.DB_USERNAME }}"
           export DB_PASSWORD="${{ secrets.DB_PASSWORD }}"
           export DB_HOST="${{ secrets.DB_HOST }}"
           export DB_PORT="${{ secrets.DB_PORT }}"
           export DB_NAME="${{ secrets.DB_NAME }}"
           
+          # Substitute the environment variables into the templates
           envsubst < devops-templates/.github/workflows/templates/db-config.yaml > db-config.yaml
           envsubst < devops-templates/.github/workflows/templates/configmap.yaml > configmap.yaml
 
+          # Apply the generated configmap and db-config files
           kubectl apply -f db-config.yaml
           kubectl apply -f configmap.yaml
 
       - name: Deploy to GKE
         run: |
+          # Set service name and port again for use in the deployment.yaml
           SERVICE_NAME_LOWERCASE=$(echo "${{ inputs.service-name }}" | tr '[:upper:]' '[:lower:]')
           REGION_URL="${{ secrets.GCP_REGION }}-docker.pkg.dev"
 
+          # Debug to check if SERVICE_PORT is correctly passed to deployment.yaml
+          echo "SERVICE_PORT=${SERVICE_PORT}"
+
+          # Generate the deployment.yaml using dynamic variables
           cat <<EOF > deployment.yaml
           apiVersion: apps/v1
           kind: Deployment
@@ -100,14 +113,14 @@ jobs:
                         cpu: "200m"
                         memory: "512Mi"
                     ports:
-                      - containerPort: ${SERVICE_PORT}  # Reference the port dynamically
+                      - containerPort: ${SERVICE_PORT}  # Make sure this is dynamically set
                     envFrom:
                       - configMapRef:
-                          name: configmap  # Reference the ConfigMap created earlier
+                          name: configmap 
                     livenessProbe:
                       httpGet:
                         path: /actuator/health
-                        port: ${SERVICE_PORT}  # Use the dynamic port from the ConfigMap
+                        port: ${SERVICE_PORT}  # Make sure this is dynamically set
                       initialDelaySeconds: 120
                       periodSeconds: 15
                       timeoutSeconds: 1
@@ -117,7 +130,7 @@ jobs:
                     readinessProbe:
                       httpGet:
                         path: /actuator/health
-                        port: ${SERVICE_PORT}  # Use the dynamic port from the ConfigMap
+                        port: ${SERVICE_PORT}  # Make sure this is dynamically set
                       initialDelaySeconds: 120
                       periodSeconds: 10
                       timeoutSeconds: 3
@@ -139,6 +152,50 @@ jobs:
                     secret:
                       secretName: cloudsql-instance-key
           EOF
+
+          # Create Horizontal Pod Autoscaler
+          cat <<EOF > hpa.yaml
+          apiVersion: autoscaling/v2
+          kind: HorizontalPodAutoscaler
+          metadata:
+            name: ${SERVICE_NAME_LOWERCASE}-hpa
+          spec:
+            scaleTargetRef:
+              apiVersion: apps/v1
+              kind: Deployment
+              name: ${SERVICE_NAME_LOWERCASE}
+            minReplicas: 1
+            maxReplicas: 2
+            metrics:
+              - type: Resource
+                resource:
+                  name: cpu
+                  target:
+                    type: Utilization
+                    averageUtilization: 80
+          EOF
+
+          # Create the service.yaml
+          cat <<EOF > service.yaml
+          apiVersion: v1
+          kind: Service
+          metadata:
+            name: ${SERVICE_NAME_LOWERCASE}
+          spec:
+            type: LoadBalancer
+            selector:
+              app: ${SERVICE_NAME_LOWERCASE}
+            ports:
+            - protocol: TCP
+              port: 80
+              targetPort: ${{ inputs.container-port }}
+          EOF
+
+          # Apply the generated files
+          kubectl apply -f deployment.yaml
+          kubectl apply -f hpa.yaml
+          kubectl apply -f service.yaml
+
 
                     cat <<EOF > hpa.yaml
                     apiVersion: autoscaling/v2
