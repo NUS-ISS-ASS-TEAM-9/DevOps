@@ -1,7 +1,9 @@
 name: Housekeeping Artifact Registry (Keep 5)
 
 on:
-  workflow_dispatch:
+  workflow_dispatch: {}
+  schedule:
+    - cron: '0 20 * * 6'  # Every Sunday 4AM SGT (8PM UTC)
 
 jobs:
   cleanup:
@@ -17,19 +19,36 @@ jobs:
         with:
           project_id: ${{ secrets.GCP_PROJECT_ID }}
 
+      - name: Detect service name from repo
+        id: detect
+        run: |
+          REPO_NAME=$(basename ${{ github.repository }})
+          echo "SERVICE_NAME=${REPO_NAME,,}" >> $GITHUB_OUTPUT
+
       - name: Prune old artifact images (retain 5 per image)
         run: |
           REGION="${{ secrets.GCP_REGION }}"
           PROJECT_ID="${{ secrets.GCP_PROJECT_ID }}"
-          REPO="devops"
+          REPO_PREFIX="devops"
+          SERVICE_NAME="${{ steps.detect.outputs.SERVICE_NAME }}"
+          IMAGE_PATH="$REGION-docker.pkg.dev/$PROJECT_ID/$REPO_PREFIX/$SERVICE_NAME"
 
-          echo "Fetching images under: $REGION-docker.pkg.dev/$PROJECT_ID/$REPO"
+          echo "Checking images under: $IMAGE_PATH"
 
-          gcloud artifacts docker images list "$REGION-docker.pkg.dev/$PROJECT_ID/$REPO" \
+          gcloud artifacts docker images list "$IMAGE_PATH" \
             --include-tags \
             --format="value(IMAGE)" | sort | uniq | while read -r image_name; do
 
             echo "::group:: Checking image: $image_name"
+
+            IMAGE_COUNT=$(gcloud artifacts docker images list "$image_name" \
+              --include-tags \
+              --format="value(DIGEST)" | wc -l)
+
+            if [ "$IMAGE_COUNT" -le 5 ]; then
+              echo "$image_name has $IMAGE_COUNT images, skipping cleanup."
+              continue
+            fi
 
             gcloud artifacts docker images list "$image_name" \
               --include-tags \
