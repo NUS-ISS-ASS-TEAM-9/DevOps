@@ -99,11 +99,23 @@ jobs:
                       memory: "256Mi"
                   ports:
                   - containerPort: ${{ inputs.container-port }}
-                  envFrom: 
+                  envFrom:
                     - configMapRef:
                         name: configmap
                     - secretRef:
                         name: db-config
+                  livenessProbe:
+                    httpGet:
+                      path: /actuator/health
+                      port: ${{ inputs.container-port }}
+                    initialDelaySeconds: 60
+                    periodSeconds: 15
+                  readinessProbe:
+                    httpGet:
+                      path: /actuator/health
+                      port: ${{ inputs.container-port }}
+                    initialDelaySeconds: 30
+                    periodSeconds: 10
 
                 - name: cloudsql-proxy
                   image: gcr.io/cloudsql-docker/gce-proxy:1.33.4
@@ -116,9 +128,30 @@ jobs:
                       readOnly: true
 
                 volumes:
-                - name: cloudsql-instance-credentials
-                  secret:
-                    secretName: cloudsql-instance-key
+                  - name: cloudsql-instance-credentials
+                    secret:
+                      secretName: cloudsql-instance-key
+          EOF
+
+          cat <<EOF > hpa.yaml
+          apiVersion: autoscaling/v2
+          kind: HorizontalPodAutoscaler
+          metadata:
+            name: ${SERVICE_NAME_LOWERCASE}-hpa
+          spec:
+            scaleTargetRef:
+              apiVersion: apps/v1
+              kind: Deployment
+              name: ${SERVICE_NAME_LOWERCASE}
+            minReplicas: 1
+            maxReplicas: 2
+            metrics:
+              - type: Resource
+                resource:
+                  name: cpu
+                  target:
+                    type: Utilization
+                    averageUtilization: 80
           EOF
 
           cat <<EOF > service.yaml
@@ -137,4 +170,5 @@ jobs:
           EOF
 
           kubectl apply -f deployment.yaml
+          kubectl apply -f hpa.yaml
           kubectl apply -f service.yaml
