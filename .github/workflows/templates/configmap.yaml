@@ -9,4 +9,4 @@ metadata:
 data:
   spring.datasource.driver-class-name: org.postgresql.Driver
   spring.jpa.database-platform: org.hibernate.dialect.PostgreSQLDialect
-  service.port: ${SERVICE_PORT} 
+  service.port: "${SERVICE_PORT}"
