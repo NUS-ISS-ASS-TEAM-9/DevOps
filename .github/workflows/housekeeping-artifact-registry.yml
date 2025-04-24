@@ -1,10 +1,17 @@
 name: Housekeeping Artifact Registry (Keep 5)
 
 on:
+  workflow_call:
+    secrets:
+      GCP_SA_KEY:
+        required: true
+      GCP_PROJECT_ID:
+        required: true
+      GCP_REGION:
+        required: true
   workflow_dispatch: {}
   schedule:
-    - cron: '0 20 * * 6'  # Every Sunday 4AM SGT (8PM UTC)
-  workflow_call: {}
+    - cron: '0 20 * * 6'  # Sunday 4AM SGT
 
 jobs:
   cleanup:
