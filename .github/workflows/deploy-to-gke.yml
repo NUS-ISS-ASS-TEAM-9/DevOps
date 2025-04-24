@@ -108,7 +108,7 @@ jobs:
                     httpGet:
                       path: /actuator/health
                       port: ${{ inputs.container-port }}
-                    initialDelaySeconds: 300
+                    initialDelaySeconds: 600
                     periodSeconds: 15
                     timeoutSeconds: 2
                     failureThreshold: 5
@@ -118,7 +118,7 @@ jobs:
                     httpGet:
                       path: /actuator/health
                       port: ${{ inputs.container-port }}
-                    initialDelaySeconds: 300
+                    initialDelaySeconds: 600
                     periodSeconds: 10
                     timeoutSeconds: 5
                     failureThreshold: 5
