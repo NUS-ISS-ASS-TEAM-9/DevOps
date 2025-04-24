@@ -107,7 +107,7 @@ jobs:
                   livenessProbe:
                     httpGet:
                       path: /actuator/health
-                      port: 8083
+                      port: ${{ inputs.container-port }}
                     initialDelaySeconds: 120
                     periodSeconds: 15
                     timeoutSeconds: 1
@@ -117,7 +117,7 @@ jobs:
                   readinessProbe:
                     httpGet:
                       path: /actuator/health
-                      port: 8083
+                      port: ${{ inputs.container-port }}
                     initialDelaySeconds: 120
                     periodSeconds: 10
                     timeoutSeconds: 3
