@@ -113,24 +113,23 @@ jobs:
                         cpu: "200m"
                         memory: "512Mi"
                     ports:
-                      - containerPort: ${SERVICE_PORT}  # Make sure this is dynamically set
+                      - containerPort: ${SERVICE_PORT}  # Use the dynamic port
                     envFrom:
                       - configMapRef:
-                          name: configmap 
+                          name: configmap
                     livenessProbe:
                       httpGet:
                         path: /actuator/health
-                        port: ${SERVICE_PORT}  # Make sure this is dynamically set
+                        port: ${SERVICE_PORT}  # Use the dynamic port
                       initialDelaySeconds: 120
                       periodSeconds: 15
                       timeoutSeconds: 1
                       failureThreshold: 5
                       successThreshold: 1
-
                     readinessProbe:
                       httpGet:
                         path: /actuator/health
-                        port: ${SERVICE_PORT}  # Make sure this is dynamically set
+                        port: ${SERVICE_PORT}  # Use the dynamic port
                       initialDelaySeconds: 120
                       periodSeconds: 10
                       timeoutSeconds: 3
@@ -192,47 +191,6 @@ jobs:
           EOF
 
           # Apply the generated files
-          kubectl apply -f deployment.yaml
-          kubectl apply -f hpa.yaml
-          kubectl apply -f service.yaml
-
-
-                    cat <<EOF > hpa.yaml
-                    apiVersion: autoscaling/v2
-                    kind: HorizontalPodAutoscaler
-                    metadata:
-                      name: ${SERVICE_NAME_LOWERCASE}-hpa
-                    spec:
-                      scaleTargetRef:
-                        apiVersion: apps/v1
-                        kind: Deployment
-                        name: ${SERVICE_NAME_LOWERCASE}
-                      minReplicas: 1
-                      maxReplicas: 2
-                      metrics:
-                        - type: Resource
-                          resource:
-                            name: cpu
-                            target:
-                              type: Utilization
-                              averageUtilization: 80
-          EOF
-
-          cat <<EOF > service.yaml
-          apiVersion: v1
-          kind: Service
-          metadata:
-            name: ${SERVICE_NAME_LOWERCASE}
-          spec:
-            type: LoadBalancer
-            selector:
-              app: ${SERVICE_NAME_LOWERCASE}
-            ports:
-            - protocol: TCP
-              port: 80
-              targetPort: ${{ inputs.container-port }}
-          EOF
-
           kubectl apply -f deployment.yaml
           kubectl apply -f hpa.yaml
           kubectl apply -f service.yaml
