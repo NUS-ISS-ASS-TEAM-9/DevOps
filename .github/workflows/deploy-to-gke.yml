@@ -108,19 +108,19 @@ jobs:
                     httpGet:
                       path: /actuator/health
                       port: ${{ inputs.container-port }}
-                    initialDelaySeconds: 189
+                    initialDelaySeconds: 300
                     periodSeconds: 15
                     timeoutSeconds: 2
-                    failureThreshold: 3
+                    failureThreshold: 5
                     successThreshold: 1
 
                   readinessProbe:
                     httpGet:
                       path: /actuator/health
                       port: ${{ inputs.container-port }}
-                    initialDelaySeconds: 180
+                    initialDelaySeconds: 300
                     periodSeconds: 10
-                    timeoutSeconds: 3
+                    timeoutSeconds: 5
                     failureThreshold: 5
                     successThreshold: 1
 
