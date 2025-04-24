@@ -86,6 +86,18 @@ jobs:
           # Debug to check if SERVICE_PORT is correctly passed to deployment.yaml
           echo "SERVICE_PORT=${SERVICE_PORT}"
 
+          # Ensure SERVICE_PORT is not empty
+          if [ -z "$SERVICE_PORT" ]; then
+            echo "Error: SERVICE_PORT is not set!"
+            exit 1
+          fi
+
+          # Export the variables for envsubst substitution
+          export SERVICE_NAME_LOWERCASE
+          export REGION_URL
+          export SERVICE_PORT
+          export GITHUB_SHA=${{ github.sha }}
+
           # Generate the deployment.yaml using dynamic variables
           cat <<EOF > deployment.yaml
           apiVersion: apps/v1
