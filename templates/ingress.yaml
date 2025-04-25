@@ -6,8 +6,7 @@ metadata:
     nginx.ingress.kubernetes.io/rewrite-target: /
 spec:
   rules:
-    - host: 34.124.164.232 # Replace with your domain or external IP
-      http:
+    - http:
         paths:
           - path: /auth
             pathType: Prefix
