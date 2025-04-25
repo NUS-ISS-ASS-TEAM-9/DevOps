@@ -1,17 +1,17 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: ${SERVICE_NAME_LOWERCASE}-ingress
+  name: workerservice-ingress
   annotations:
     kubernetes.io/ingress.class: "gce"
 spec:
   rules:
     - http:
         paths:
-          - path: /${SERVICE_NAME_LOWERCASE}
+          - path: /workerservice
             pathType: Prefix
             backend:
               service:
-                name: ${SERVICE_NAME_LOWERCASE}
+                name: workerservice
                 port:
                   number: 80

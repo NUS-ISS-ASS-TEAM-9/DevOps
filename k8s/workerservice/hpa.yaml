@@ -1,12 +1,12 @@
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
-  name: ${SERVICE_NAME_LOWERCASE}-hpa
+  name: workerservice-hpa
 spec:
   scaleTargetRef:
     apiVersion: apps/v1
     kind: Deployment
-    name: ${SERVICE_NAME_LOWERCASE}
+    name: workerservice
   minReplicas: 1
   maxReplicas: 2
   metrics:
