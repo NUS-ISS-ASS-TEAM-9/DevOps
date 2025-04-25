@@ -70,8 +70,8 @@ jobs:
         with:
           repository: NUS-ISS-ASS-TEAM-9/Devops
           path: devops
-
-      - name: Inject configurations
+      
+      - name: Inject DB secrets/configmap
         run: |
           export DB_USERNAME="${{ secrets.DB_USERNAME }}"
           export DB_PASSWORD="${{ secrets.DB_PASSWORD }}"
@@ -85,19 +85,126 @@ jobs:
           export JWT_SECRET="${{ secrets.JWT_SECRET }}"
           export JWT_EXPIRATION="${{ secrets.JWT_EXPIRATION }}"
 
-          envsubst < devops/templates/db-config.yaml > db-config.yaml
-          envsubst < devops/templates/configmap.yaml > configmap.yaml
-          envsubst < devops/templates/rabbitmq-config.yaml > rabbitmq-config.yaml
+
+          envsubst < devops/.github/templates/db-config.yaml > db-config.yaml
+          envsubst < devops/.github/templates/configmap.yaml > configmap.yaml
+          envsubst < devops/.github/templates/rabbitmq-config.yaml > rabbitmq-config.yaml
+
 
           kubectl apply -f db-config.yaml
           kubectl apply -f configmap.yaml
           kubectl apply -f rabbitmq-config.yaml
 
-      - name: Apply Kubernetes Manifests
+
+      - name: Deploy to GKE
         run: |
           SERVICE_NAME_LOWERCASE=$(echo "${{ inputs.service-name }}" | tr '[:upper:]' '[:lower:]')
-          kubectl apply -f devops/k8s/${SERVICE_NAME_LOWERCASE}/deployment.yaml
-          kubectl apply -f devops/k8s/${SERVICE_NAME_LOWERCASE}/hpa.yaml
-          kubectl apply -f devops/k8s/${SERVICE_NAME_LOWERCASE}/service.yaml
-          kubectl apply -f devops/k8s/${SERVICE_NAME_LOWERCASE}/ingress.yaml
-          
+          REGION_URL="${{ secrets.GCP_REGION }}-docker.pkg.dev"
+
+          cat <<EOF > deployment.yaml
+          apiVersion: apps/v1
+          kind: Deployment
+          metadata:
+            name: ${SERVICE_NAME_LOWERCASE}
+          spec:
+            replicas: 1
+            selector:
+              matchLabels:
+                app: ${SERVICE_NAME_LOWERCASE}
+            template:
+              metadata:
+                labels:
+                  app: ${SERVICE_NAME_LOWERCASE}
+              spec:
+                containers:
+                - name: ${SERVICE_NAME_LOWERCASE}
+                  image: ${REGION_URL}/${{ secrets.GCP_PROJECT_ID }}/devops/${SERVICE_NAME_LOWERCASE}:${GITHUB_SHA}
+                  resources:
+                    requests:
+                      cpu: "100m"
+                      memory: "256Mi"
+                    limits:
+                      cpu: "200m"
+                      memory: "512Mi"
+                  ports:
+                  - containerPort: ${{ inputs.container-port }}
+                  envFrom:
+                    - configMapRef:
+                        name: configmap
+                    - secretRef:
+                        name: db-config
+                  livenessProbe:
+                    httpGet:
+                      path: /actuator/health
+                      port: ${{ inputs.container-port }}
+                    initialDelaySeconds: 300
+                    periodSeconds: 30
+                    timeoutSeconds: 4
+                    failureThreshold: 5
+                    successThreshold: 1
+
+                  readinessProbe:
+                    httpGet:
+                      path: /actuator/health
+                      port: ${{ inputs.container-port }}
+                    initialDelaySeconds: 300
+                    periodSeconds: 30
+                    timeoutSeconds: 5
+                    failureThreshold: 5
+                    successThreshold: 1
+
+                - name: cloudsql-proxy
+                  image: gcr.io/cloudsql-docker/gce-proxy:1.33.4
+                  command: ["/cloud_sql_proxy",
+                            "-instances=${{ secrets.CLOUDSQL_CONNECTION_NAME }}=tcp:${{ secrets.DB_PORT }}",
+                            "-credential_file=/secrets/cloudsql/credentials.json"]
+                  volumeMounts:
+                    - name: cloudsql-instance-credentials
+                      mountPath: /secrets/cloudsql
+                      readOnly: true
+
+                volumes:
+                  - name: cloudsql-instance-credentials
+                    secret:
+                      secretName: cloudsql-instance-key
+          EOF
+
+          cat <<EOF > hpa.yaml
+          apiVersion: autoscaling/v2
+          kind: HorizontalPodAutoscaler
+          metadata:
+            name: ${SERVICE_NAME_LOWERCASE}-hpa
+          spec:
+            scaleTargetRef:
+              apiVersion: apps/v1
+              kind: Deployment
+              name: ${SERVICE_NAME_LOWERCASE}
+            minReplicas: 1
+            maxReplicas: 2
+            metrics:
+              - type: Resource
+                resource:
+                  name: cpu
+                  target:
+                    type: Utilization
+                    averageUtilization: 80
+          EOF
+
+          cat <<EOF > service.yaml
+          apiVersion: v1
+          kind: Service
+          metadata:
+            name: ${SERVICE_NAME_LOWERCASE}
+          spec:
+            type: LoadBalancer
+            selector:
+              app: ${SERVICE_NAME_LOWERCASE}
+            ports:
+            - protocol: TCP
+              port: 80
+              targetPort: ${{ inputs.container-port }}
+          EOF
+
+          kubectl apply -f deployment.yaml
+          kubectl apply -f hpa.yaml
+          kubectl apply -f service.yaml
