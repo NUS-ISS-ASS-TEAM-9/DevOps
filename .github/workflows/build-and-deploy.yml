@@ -39,10 +39,6 @@ on:
         required: true
       RABBITMQ_ADDRESSES:
         required: true
-      JWT_SECRET:
-        required: true
-      JWT_EXPIRATION:
-        required: true
 
 jobs:
   build-test:

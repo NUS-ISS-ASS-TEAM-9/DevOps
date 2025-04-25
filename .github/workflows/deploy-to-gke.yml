@@ -82,9 +82,7 @@ jobs:
           export RABBITMQ_PASSWORD="${{ secrets.RABBITMQ_PASSWORD }}"
           export RABBITMQ_VHOST="${{ secrets.RABBITMQ_VHOST }}"
           export RABBITMQ_ADDRESSES="${{ secrets.RABBITMQ_ADDRESSES }}"
-          export JWT_SECRET="${{ secrets.JWT_SECRET }}"
-          export JWT_EXPIRATION="${{ secrets.JWT_EXPIRATION }}"
-
+      
 
           envsubst < devops/templates/db-config.yaml > db-config.yaml
           envsubst < devops/templates/configmap.yaml > configmap.yaml

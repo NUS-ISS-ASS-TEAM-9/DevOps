@@ -5,6 +5,3 @@ metadata:
   namespace: default
   labels:
     app: ${SERVICE_NAME_LOWERCASE}
-data:
-  JWT_SECRET: "${JWT_SECRET}"
-  JWT_EXPIRATION: "${JWT_EXPIRATION}"
