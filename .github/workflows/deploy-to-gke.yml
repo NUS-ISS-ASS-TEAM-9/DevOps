@@ -100,3 +100,4 @@ jobs:
           kubectl apply -f devops/k8s/${SERVICE_NAME_LOWERCASE}/hpa.yaml
           kubectl apply -f devops/k8s/${SERVICE_NAME_LOWERCASE}/service.yaml
           kubectl apply -f devops/k8s/${SERVICE_NAME_LOWERCASE}/ingress.yaml
+          
