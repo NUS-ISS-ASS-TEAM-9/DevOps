@@ -43,7 +43,6 @@ on:
         required: true
       JWT_EXPIRATION:
         required: true
-    
 
 jobs:
   build-test:
@@ -64,20 +63,4 @@ jobs:
     with:
       service-name: ${{ inputs.service-name }}
       container-port: ${{ inputs.container-port }}
-    secrets:
-      GCP_SA_KEY: ${{ secrets.GCP_SA_KEY }}
-      GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
-      GCP_REGION: ${{ secrets.GCP_REGION }}
-      GCP_CLUSTER_NAME: ${{ secrets.GCP_CLUSTER_NAME }}
-      CLOUDSQL_CONNECTION_NAME: ${{ secrets.CLOUDSQL_CONNECTION_NAME }}
-      DB_USERNAME: ${{ secrets.DB_USERNAME }}
-      DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
-      DB_HOST: ${{ secrets.DB_HOST }}
-      DB_PORT: ${{ secrets.DB_PORT }}
-      DB_NAME: ${{ secrets.DB_NAME }}
-      RABBITMQ_USERNAME: ${{ secrets.RABBITMQ_USERNAME }}
-      RABBITMQ_PASSWORD: ${{ secrets.RABBITMQ_PASSWORD }}
-      RABBITMQ_VHOST: ${{ secrets.RABBITMQ_VHOST }}
-      RABBITMQ_ADDRESSES: ${{ secrets.RABBITMQ_ADDRESSES }}
-      JWT_SECRET: ${{ secrets.JWT_SECRET }}
-      JWT_EXPIRATION: ${{ secrets.JWT_EXPIRATION }}
+    secrets: inherit
