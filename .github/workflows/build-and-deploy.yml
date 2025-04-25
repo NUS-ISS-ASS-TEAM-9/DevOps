@@ -19,6 +19,31 @@ on:
         required: true
       GCP_CLUSTER_NAME:
         required: true
+      CLOUDSQL_CONNECTION_NAME:
+        required: true
+      DB_USERNAME:
+        required: true
+      DB_PASSWORD:
+        required: true
+      DB_HOST:
+        required: true
+      DB_PORT:
+        required: true
+      DB_NAME:
+        required: true
+      RABBITMQ_USERNAME:
+        required: true
+      RABBITMQ_PASSWORD:
+        required: true
+      RABBITMQ_VHOST:
+        required: true
+      RABBITMQ_ADDRESSES:
+        required: true
+      JWT_SECRET:
+        required: true
+      JWT_EXPIRATION:
+        required: true
+    
 
 jobs:
   build-test:
