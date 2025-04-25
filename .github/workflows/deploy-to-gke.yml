@@ -168,21 +168,7 @@ jobs:
                     averageUtilization: 80
           EOF
 
-          cat <<EOF > service.yaml
-          apiVersion: v1
-          kind: Service
-          metadata:
-            name: ${SERVICE_NAME_LOWERCASE}
-          spec:
-            type: LoadBalancer
-            selector:
-              app: ${SERVICE_NAME_LOWERCASE}
-            ports:
-            - protocol: TCP
-              port: 80
-              targetPort: ${{ inputs.container-port }}
-          EOF
-
           kubectl apply -f deployment.yaml
           kubectl apply -f hpa.yaml
-          kubectl apply -f service.yaml
+          kubectl apply -f devops/templates/${SERVICE_NAME_LOWERCASE}-service.yaml
+          kubectl apply -f devops/templates/ingress.yaml
