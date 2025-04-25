@@ -3,7 +3,6 @@ kind: Ingress
 metadata:
   name: service-ingress
   annotations:
-    nginx.ingress.kubernetes.io/rewrite-target: /
     nginx.ingress.kubernetes.io/proxy-set-headers: "true"
 spec:
   ingressClassName: nginx
