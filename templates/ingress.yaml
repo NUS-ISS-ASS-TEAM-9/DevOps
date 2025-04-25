@@ -16,21 +16,21 @@ spec:
                 name: authservice
                 port:
                   number: 80
-          - path: /api/orders
+          - path: /api/order
             pathType: Prefix
             backend:
               service:
                 name: orderservice
                 port:
                   number: 80
-          - path: /api/users
+          - path: /api/user
             pathType: Prefix
             backend:
               service:
                 name: userservice
                 port:
                   number: 80
-          - path: /api/worker/test
+          - path: /api/worker
             pathType: Prefix
             backend:
               service:
