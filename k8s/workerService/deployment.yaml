@@ -1,0 +1,67 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ${SERVICE_NAME_LOWERCASE}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ${SERVICE_NAME_LOWERCASE}
+  template:
+    metadata:
+      labels:
+        app: ${SERVICE_NAME_LOWERCASE}
+    spec:
+      containers:
+      - name: ${SERVICE_NAME_LOWERCASE}
+        image: ${REGION_URL}/${{ secrets.GCP_PROJECT_ID }}/devops/${SERVICE_NAME_LOWERCASE}:${GITHUB_SHA}
+        resources:
+          requests:
+            cpu: "100m"
+            memory: "256Mi"
+          limits:
+            cpu: "200m"
+            memory: "512Mi"
+        ports:
+        - containerPort: ${{ inputs.container-port }}
+        envFrom:
+          - configMapRef:
+              name: configmap
+          - secretRef:
+              name: db-config
+          - secretRef:
+              name: rabbitmq-config
+        livenessProbe:
+          httpGet:
+            path: /actuator/health
+            port: ${{ inputs.container-port }}
+          initialDelaySeconds: 300
+          periodSeconds: 30
+          timeoutSeconds: 4
+          failureThreshold: 5
+          successThreshold: 1
+
+        readinessProbe:
+          httpGet:
+            path: /actuator/health
+            port: ${{ inputs.container-port }}
+          initialDelaySeconds: 300
+          periodSeconds: 30
+          timeoutSeconds: 5
+          failureThreshold: 5
+          successThreshold: 1
+
+      - name: cloudsql-proxy
+        image: gcr.io/cloudsql-docker/gce-proxy:1.33.4
+        command: ["/cloud_sql_proxy",
+                  "-instances=${{ secrets.CLOUDSQL_CONNECTION_NAME }}=tcp:${{ secrets.DB_PORT }}",
+                  "-credential_file=/secrets/cloudsql/credentials.json"]
+        volumeMounts:
+          - name: cloudsql-instance-credentials
+            mountPath: /secrets/cloudsql
+            readOnly: true
+
+      volumes:
+        - name: cloudsql-instance-credentials
+          secret:
+            secretName: cloudsql-instance-key
