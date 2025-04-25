@@ -106,6 +106,9 @@ jobs:
                         name: configmap
                     - secretRef:
                         name: db-config
+                    - secretRef:
+                      name: rabbitmq-config
+                    
                   env:
                     - name: SPRING_PROFILE_ACTIVE
                       value: "prod"
