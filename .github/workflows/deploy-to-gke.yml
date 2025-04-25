@@ -51,7 +51,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: NUS-ISS-ASS-TEAM-9/Devops
-          path: devops-templates
+          path: devops
 
       - name: Inject configurations
         run: |
