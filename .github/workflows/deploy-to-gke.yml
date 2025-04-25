@@ -63,11 +63,9 @@ jobs:
           
           envsubst < devops-templates/.github/workflows/templates/db-config.yaml > db-config.yaml
           envsubst < devops-templates/.github/workflows/templates/configmap.yaml > configmap.yaml
-          envsubst < devops-templates/.github/workflows/templates/rabbitmq-config.yaml > rabbitmq-config.yaml
 
           kubectl apply -f db-config.yaml
           kubectl apply -f configmap.yaml
-          kubectl apply -f rabbitmq-config.yaml
 
       - name: Deploy to GKE
         run: |
@@ -94,11 +92,11 @@ jobs:
                   image: ${REGION_URL}/${{ secrets.GCP_PROJECT_ID }}/devops/${SERVICE_NAME_LOWERCASE}:${GITHUB_SHA}
                   resources:
                     requests:
-                      cpu: "50m"
-                      memory: "128Mi"
-                    limits:
                       cpu: "100m"
                       memory: "256Mi"
+                    limits:
+                      cpu: "200m"
+                      memory: "512Mi"
                   ports:
                   - containerPort: ${{ inputs.container-port }}
                   envFrom:
@@ -106,12 +104,6 @@ jobs:
                         name: configmap
                     - secretRef:
                         name: db-config
-                    - secretRef:
-                      name: rabbitmq-config
-                    
-                  env:
-                    - name: SPRING_PROFILE_ACTIVE
-                      value: "prod"
                   livenessProbe:
                     httpGet:
                       path: /actuator/health
