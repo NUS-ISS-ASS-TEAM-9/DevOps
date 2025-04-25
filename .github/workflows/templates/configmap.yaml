@@ -7,5 +7,5 @@ metadata:
     app: ${SERVICE_NAME_LOWERCASE}
 
 data:
-  spring.datasource.driver-class-name: org.postgresql.Driver
-  spring.jpa.database-platform: org.hibernate.dialect.PostgreSQLDialect
+  JWT_SECRET: "${JWT_SECRET}"
+  JWT_EXPIRATION: "${JWT_EXPIRATION}"

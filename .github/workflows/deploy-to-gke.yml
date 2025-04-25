@@ -63,9 +63,11 @@ jobs:
           
           envsubst < devops-templates/.github/workflows/templates/db-config.yaml > db-config.yaml
           envsubst < devops-templates/.github/workflows/templates/configmap.yaml > configmap.yaml
+          envsubst < devops-templates/.github/workflows/templates/rabbitmq-config.yaml > rabbitmq-config.yaml
 
           kubectl apply -f db-config.yaml
           kubectl apply -f configmap.yaml
+          kubectl apply -f rabbitmq-config.yaml
 
       - name: Deploy to GKE
         run: |
@@ -104,6 +106,9 @@ jobs:
                         name: configmap
                     - secretRef:
                         name: db-config
+                  env:
+                    - name: SPRING_PROFILE_ACTIVE
+                      value: "prod"
                   livenessProbe:
                     httpGet:
                       path: /actuator/health

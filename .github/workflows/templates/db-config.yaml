@@ -6,6 +6,8 @@ metadata:
   labels:
     app: ${SERVICE_NAME_LOWERCASE}
 stringData:
-  spring.datasource.username: "${DB_USERNAME}"
-  spring.datasource.password: "${DB_PASSWORD}"
-  spring.datasource.url: "jdbc:postgresql://${DB_HOST}:${DB_PORT}/${DB_NAME}"
+  SPRING_DATASOURCE_USERNAME: "${DB_USERNAME}"
+  SPRING_DATASOURCE_PASSWORD: "${DB_PASSWORD}"
+  SPRING_DATASOURCE_URL: "jdbc:postgresql://${DB_HOST}:${DB_PORT}/${DB_NAME}"
+  SPRING_DATASOURCE_DRIVER_CLASS_NAME: "org.postgresql.Driver"
+  SPRING_JPA_HIBERNATE_DIALECT: "org.hibernate.dialect.PostgreSQLDialect"

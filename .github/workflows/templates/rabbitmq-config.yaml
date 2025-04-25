@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: rabbitmq-config
+  namespace: default
+  labels:
+    app: ${SERVICE_NAME_LOWERCASE}
+stringData:
+  RABBITMQ_USERNAME: "${RABBITMQ_USERNAME}"
+  RABBITMQ_PASSWORD: "${RABBITMQ_PASSWORD}"
+  RABBITMQ_VHOST: "${RABBITMQ_VHOST}"
+  RABBITMQ_ADDRESSES: "${RABBITMQ_ADDRESSES}"
