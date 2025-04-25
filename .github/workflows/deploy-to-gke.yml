@@ -25,6 +25,24 @@ on:
         required: true
       DB_PASSWORD:
         required: true
+      DB_HOST:
+        required: true
+      DB_PORT:
+        required: true
+      DB_NAME:
+        required: true
+      RABBITMQ_USERNAME:
+        required: true
+      RABBITMQ_PASSWORD:
+        required: true
+      RABBITMQ_VHOST:
+        required: true
+      RABBITMQ_ADDRESSES:
+        required: true
+      JWT_SECRET:
+        required: true
+      JWT_EXPIRATION:
+        required: true
 
 jobs:
   deploy:
@@ -66,7 +84,6 @@ jobs:
           export RABBITMQ_ADDRESSES="${{ secrets.RABBITMQ_ADDRESSES }}"
           export JWT_SECRET="${{ secrets.JWT_SECRET }}"
           export JWT_EXPIRATION="${{ secrets.JWT_EXPIRATION }}"
-
 
           envsubst < devops/templates/db-config.yaml > db-config.yaml
           envsubst < devops/templates/configmap.yaml > configmap.yaml
