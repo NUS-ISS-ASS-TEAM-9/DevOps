@@ -86,9 +86,9 @@ jobs:
           export JWT_EXPIRATION="${{ secrets.JWT_EXPIRATION }}"
 
 
-          envsubst < devops/.github/templates/db-config.yaml > db-config.yaml
-          envsubst < devops/.github/templates/configmap.yaml > configmap.yaml
-          envsubst < devops/.github/templates/rabbitmq-config.yaml > rabbitmq-config.yaml
+          envsubst < devops/templates/db-config.yaml > db-config.yaml
+          envsubst < devops/templates/configmap.yaml > configmap.yaml
+          envsubst < devops/templates/rabbitmq-config.yaml > rabbitmq-config.yaml
 
 
           kubectl apply -f db-config.yaml
