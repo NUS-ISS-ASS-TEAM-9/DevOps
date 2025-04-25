@@ -53,7 +53,7 @@ jobs:
           repository: NUS-ISS-ASS-TEAM-9/Devops
           path: devops-templates
 
-      - name: Inject DB secrets/configmap
+      - name: Inject configurations
         run: |
           export DB_USERNAME="${{ secrets.DB_USERNAME }}"
           export DB_PASSWORD="${{ secrets.DB_PASSWORD }}"
@@ -68,9 +68,9 @@ jobs:
           export JWT_EXPIRATION="${{ secrets.JWT_EXPIRATION }}"
 
 
-          envsubst < devops/.github/workflows/templates/db-config.yaml > db-config.yaml
-          envsubst < devops/.github/workflows/templates/configmap.yaml > configmap.yaml
-          envsubst < devops/.github/workflows/templates/rabbitmq-config.yaml > rabbitmq-config.yaml
+          envsubst < devops/templates/db-config.yaml > db-config.yaml
+          envsubst < devops/templates/configmap.yaml > configmap.yaml
+          envsubst < devops/templates/rabbitmq-config.yaml > rabbitmq-config.yaml
 
           kubectl apply -f db-config.yaml
           kubectl apply -f configmap.yaml
