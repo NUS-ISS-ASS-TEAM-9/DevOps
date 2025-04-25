@@ -1,17 +1,12 @@
-apiVersion: networking.k8s.io/v1
-kind: Ingress
+apiVersion: v1
+kind: Service
 metadata:
-  name: ${SERVICE_NAME_LOWERCASE}-ingress
-  annotations:
-    kubernetes.io/ingress.class: "gce"
+  name: ${SERVICE_NAME_LOWERCASE}
 spec:
-  rules:
-    - http:
-        paths:
-          - path: /${SERVICE_NAME_LOWERCASE}
-            pathType: Prefix
-            backend:
-              service:
-                name: ${SERVICE_NAME_LOWERCASE}
-                port:
-                  number: 80
+  type: ClusterIP
+  selector:
+    app: ${SERVICE_NAME_LOWERCASE}
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: ${{ inputs.container-port }}
