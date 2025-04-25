@@ -31,14 +31,6 @@ on:
         required: true
       DB_NAME:
         required: true
-      RABBITMQ_USERNAME:
-        required: true
-      RABBITMQ_PASSWORD:
-        required: true
-      RABBITMQ_VHOST:
-        required: true
-      RABBITMQ_ADDRESSES:
-        required: true
 
 jobs:
   build-test:

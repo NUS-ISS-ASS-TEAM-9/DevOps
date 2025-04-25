@@ -31,18 +31,7 @@ on:
         required: true
       DB_NAME:
         required: true
-      RABBITMQ_USERNAME:
-        required: true
-      RABBITMQ_PASSWORD:
-        required: true
-      RABBITMQ_VHOST:
-        required: true
-      RABBITMQ_ADDRESSES:
-        required: true
-      JWT_SECRET:
-        required: true
-      JWT_EXPIRATION:
-        required: true
+  
 
 jobs:
   deploy:
@@ -78,22 +67,13 @@ jobs:
           export DB_HOST="${{ secrets.DB_HOST }}"
           export DB_PORT="${{ secrets.DB_PORT }}"
           export DB_NAME="${{ secrets.DB_NAME }}"
-          export RABBITMQ_USERNAME="${{ secrets.RABBITMQ_USERNAME }}"
-          export RABBITMQ_PASSWORD="${{ secrets.RABBITMQ_PASSWORD }}"
-          export RABBITMQ_VHOST="${{ secrets.RABBITMQ_VHOST }}"
-          export RABBITMQ_ADDRESSES="${{ secrets.RABBITMQ_ADDRESSES }}"
-      
 
           envsubst < devops/templates/db-config.yaml > db-config.yaml
           envsubst < devops/templates/configmap.yaml > configmap.yaml
-          envsubst < devops/templates/rabbitmq-config.yaml > rabbitmq-config.yaml
-
-
+        
           kubectl apply -f db-config.yaml
           kubectl apply -f configmap.yaml
-          kubectl apply -f rabbitmq-config.yaml
-
-
+  
       - name: Deploy to GKE
         run: |
           SERVICE_NAME_LOWERCASE=$(echo "${{ inputs.service-name }}" | tr '[:upper:]' '[:lower:]')
