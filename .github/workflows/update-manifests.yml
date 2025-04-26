@@ -1,0 +1,70 @@
+name: Deploy to GKE
+
+on:
+  workflow_call:
+    inputs:
+      service-name:
+        required: true
+        type: string
+      update-ingress:
+        required: true
+        type: boolean
+      update-service:
+        required: true
+        type: boolean
+      update-hpa:
+        required: true
+        type: boolean
+
+    secrets:
+      GCP_SA_KEY:
+        required: true
+      GCP_PROJECT_ID:
+        required: true
+      GCP_CLUSTER_NAME:
+        required: true
+      GCP_REGION:
+        required: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Set up gcloud CLI
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: ${{ secrets.GCP_PROJECT_ID }}
+          install_components: 'gke-gcloud-auth-plugin'
+
+      - name: Set up kubectl
+        run: |
+          gcloud container clusters get-credentials ${{ secrets.GCP_CLUSTER_NAME }} \
+            --region ${{ secrets.GCP_REGION }} \
+            --project ${{ secrets.GCP_PROJECT_ID }}
+
+      - name: Apply Ingress manifest
+        if: ${{ inputs.update-ingress == 'true' }}
+        run: |
+          echo "Applying ingress for service: ${{ inputs.service-name }}"
+          kubectl apply -f devops/manifests/${{ inputs.service-name }}/ingress.yaml
+
+      - name: Apply Service manifest
+        if: ${{ inputs.update-service == 'true' }}
+        run: |
+          echo "Applying service for service: ${{ inputs.service-name }}"
+          kubectl apply -f devops/manifests/${{ inputs.service-name }}/service.yaml
+
+      - name: Apply HPA manifest
+        if: ${{ inputs.update-hpa == 'true' }}
+        run: |
+          echo "Applying HPA for service: ${{ inputs.service-name }}"
+          kubectl apply -f devops/manifests/${{ inputs.service-name }}/hpa.yaml
+
+      - name: Confirm Update Completion
+        run: |
+          echo "Manifests updated successfully."
