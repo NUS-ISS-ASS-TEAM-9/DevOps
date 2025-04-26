@@ -67,13 +67,13 @@ jobs:
           export DB_HOST="${{ secrets.DB_HOST }}"
           export DB_PORT="${{ secrets.DB_PORT }}"
           export DB_NAME="${{ secrets.DB_NAME }}"
-
+    
           envsubst < devops/templates/db-config.yaml > db-config.yaml
           envsubst < devops/templates/configmap.yaml > configmap.yaml
         
           kubectl apply -f db-config.yaml
           kubectl apply -f configmap.yaml
-  
+
       - name: Deploy to GKE
         run: |
           SERVICE_NAME_LOWERCASE=$(echo "${{ inputs.service-name }}" | tr '[:upper:]' '[:lower:]')
@@ -147,28 +147,7 @@ jobs:
                       secretName: cloudsql-instance-key
           EOF
 
-          cat <<EOF > hpa.yaml
-          apiVersion: autoscaling/v2
-          kind: HorizontalPodAutoscaler
-          metadata:
-            name: ${SERVICE_NAME_LOWERCASE}-hpa
-          spec:
-            scaleTargetRef:
-              apiVersion: apps/v1
-              kind: Deployment
-              name: ${SERVICE_NAME_LOWERCASE}
-            minReplicas: 1
-            maxReplicas: 2
-            metrics:
-              - type: Resource
-                resource:
-                  name: cpu
-                  target:
-                    type: Utilization
-                    averageUtilization: 80
-          EOF
-
           kubectl apply -f deployment.yaml
-          kubectl apply -f hpa.yaml
-          kubectl apply -f devops/templates/${SERVICE_NAME_LOWERCASE}-service.yaml
-          kubectl apply -f devops/templates/ingress.yaml
+          kubectl apply -f devops/manifests/${SERVICE_NAME_LOWERCASE}/hpa.yaml
+          kubectl apply -f devops/manifests/${SERVICE_NAME_LOWERCASE}/service.yaml
+          kubectl apply -f devops/manifests/${SERVICE_NAME_LOWERCASE}/ingress.yaml

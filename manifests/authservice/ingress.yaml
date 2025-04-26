@@ -1,0 +1,20 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: authservice-ingress
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-set-headers: "true"
+spec:
+  ingressClassName: nginx
+  rules:
+    - http:
+        paths:
+          - path: /api/auth
+            pathType: Prefix
+            backend:
+              service:
+                name: authservice
+                port:
+                  number: 80
+
+     
