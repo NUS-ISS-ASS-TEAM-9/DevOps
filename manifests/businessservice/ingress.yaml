@@ -1,0 +1,19 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: orderservice-ingress
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-set-headers: "true"
+spec:
+  ingressClassName: nginx
+  rules:
+    - http:
+        paths:
+          - path: /api/business
+            pathType: Prefix
+            backend:
+              service:
+                name: orderservice
+                port:
+                  number: 80
+     
