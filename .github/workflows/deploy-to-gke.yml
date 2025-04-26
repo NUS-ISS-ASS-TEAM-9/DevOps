@@ -102,7 +102,7 @@ jobs:
                       cpu: "100m"
                       memory: "256Mi"
                     limits:
-                      cpu: "200m"
+                      cpu: "300m"
                       memory: "512Mi"
                   ports:
                   - containerPort: ${{ inputs.container-port }}
@@ -115,20 +115,20 @@ jobs:
                     httpGet:
                       path: /actuator/health
                       port: ${{ inputs.container-port }}
-                    initialDelaySeconds: 300
+                    initialDelaySeconds: 60
                     periodSeconds: 30
                     timeoutSeconds: 4
-                    failureThreshold: 5
+                    failureThreshold: 3
                     successThreshold: 1
 
                   readinessProbe:
                     httpGet:
                       path: /actuator/health
                       port: ${{ inputs.container-port }}
-                    initialDelaySeconds: 300
+                    initialDelaySeconds: 60
                     periodSeconds: 30
                     timeoutSeconds: 5
-                    failureThreshold: 5
+                    failureThreshold: 3
                     successThreshold: 1
 
                 - name: cloudsql-proxy
