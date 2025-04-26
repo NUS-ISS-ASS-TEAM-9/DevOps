@@ -1,33 +1,23 @@
-name: Deploy to GKE
+name: Update Manifests for Service
 
 on:
-  workflow_call:
+  workflow_dispatch:
     inputs:
-      service-name:
-        required: true
-        type: string
       update-ingress:
+        description: 'Update Ingress manifest'
         required: true
         type: boolean
       update-service:
+        description: 'Update Service manifest'
         required: true
         type: boolean
       update-hpa:
+        description: 'Update HPA manifest'
         required: true
         type: boolean
 
-    secrets:
-      GCP_SA_KEY:
-        required: true
-      GCP_PROJECT_ID:
-        required: true
-      GCP_CLUSTER_NAME:
-        required: true
-      GCP_REGION:
-        required: true
-
 jobs:
-  deploy:
+  update-manifests:
     runs-on: ubuntu-latest
     steps:
       - name: Authenticate to Google Cloud
@@ -47,23 +37,30 @@ jobs:
             --region ${{ secrets.GCP_REGION }} \
             --project ${{ secrets.GCP_PROJECT_ID }}
 
+      - name: Get Service Name from Repository Context
+        id: get_service_name
+        run: |
+          SERVICE_NAME=${GITHUB_REPOSITORY##*/}
+          SERVICE_NAME_LOWERCASE=$(echo "$SERVICE_NAME" | tr '[:upper:]' '[:lower:]')
+          echo "SERVICE_NAME=$SERVICE_NAME_LOWERCASE" >> $GITHUB_ENV
+
       - name: Apply Ingress manifest
         if: ${{ inputs.update-ingress == 'true' }}
         run: |
-          echo "Applying ingress for service: ${{ inputs.service-name }}"
-          kubectl apply -f devops/manifests/${{ inputs.service-name }}/ingress.yaml
+          echo "Applying Ingress for service: ${{ env.SERVICE_NAME }}"
+          kubectl apply -f devops/manifests/${{ env.SERVICE_NAME }}/ingress.yaml
 
       - name: Apply Service manifest
         if: ${{ inputs.update-service == 'true' }}
         run: |
-          echo "Applying service for service: ${{ inputs.service-name }}"
-          kubectl apply -f devops/manifests/${{ inputs.service-name }}/service.yaml
+          echo "Applying Service for service: ${{ env.SERVICE_NAME }}"
+          kubectl apply -f devops/manifests/${{ env.SERVICE_NAME }}/service.yaml
 
       - name: Apply HPA manifest
         if: ${{ inputs.update-hpa == 'true' }}
         run: |
-          echo "Applying HPA for service: ${{ inputs.service-name }}"
-          kubectl apply -f devops/manifests/${{ inputs.service-name }}/hpa.yaml
+          echo "Applying HPA for service: ${{ env.SERVICE_NAME }}"
+          kubectl apply -f devops/manifests/${{ env.SERVICE_NAME }}/hpa.yaml
 
       - name: Confirm Update Completion
         run: |
