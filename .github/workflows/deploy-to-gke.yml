@@ -99,11 +99,11 @@ jobs:
                   image: ${REGION_URL}/${{ secrets.GCP_PROJECT_ID }}/devops/${SERVICE_NAME_LOWERCASE}:${GITHUB_SHA}
                   resources:
                     requests:
-                      cpu: "200m"
-                      memory: "256Mi"
-                    limits:
-                      cpu: "500m"
+                      cpu: "300m"
                       memory: "512Mi"
+                    limits:
+                      cpu: "600m"
+                      memory: "1Gi"
                   ports:
                   - containerPort: ${{ inputs.container-port }}
                   envFrom:
@@ -111,13 +111,21 @@ jobs:
                         name: configmap
                     - secretRef:
                         name: db-config
+                  startartupProbe:
+                    httpGet:
+                      path: /actuator/health
+                      port: ${{ inputs.container-port }}
+                      initialDelaySeconds: 30
+                      periodSeconds: 15
+                      timeoutSeconds: 10
+                      failureThreshold: 20
                   livenessProbe:
                     httpGet:
                       path: /actuator/health
                       port: ${{ inputs.container-port }}
                     initialDelaySeconds: 90
-                    periodSeconds: 30
-                    timeoutSeconds: 4
+                    periodSeconds: 15
+                    timeoutSeconds: 10
                     failureThreshold: 5
                     successThreshold: 1
 
@@ -126,8 +134,8 @@ jobs:
                       path: /actuator/health
                       port: ${{ inputs.container-port }}
                     initialDelaySeconds: 90
-                    periodSeconds: 30
-                    timeoutSeconds: 5
+                    periodSeconds: 15
+                    timeoutSeconds: 10
                     failureThreshold: 5
                     successThreshold: 1
 
