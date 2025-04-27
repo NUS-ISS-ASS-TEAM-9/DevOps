@@ -111,7 +111,7 @@ jobs:
                         name: configmap
                     - secretRef:
                         name: db-config
-                  startartupProbe:
+                  startupProbe:
                     httpGet:
                       path: /actuator/health
                       port: ${{ inputs.container-port }}
