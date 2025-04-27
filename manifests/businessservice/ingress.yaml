@@ -1,7 +1,7 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: orderservice-ingress
+  name: businessservice-ingress
   annotations:
     nginx.ingress.kubernetes.io/proxy-set-headers: "true"
 spec:
@@ -13,7 +13,7 @@ spec:
             pathType: Prefix
             backend:
               service:
-                name: orderservice
+                name: businessservice
                 port:
                   number: 80
      
