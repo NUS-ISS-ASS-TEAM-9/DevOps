@@ -115,10 +115,10 @@ jobs:
                     httpGet:
                       path: /actuator/health
                       port: ${{ inputs.container-port }}
-                      initialDelaySeconds: 30
-                      periodSeconds: 15
-                      timeoutSeconds: 10
-                      failureThreshold: 20
+                    initialDelaySeconds: 30
+                    periodSeconds: 15
+                    timeoutSeconds: 10
+                    failureThreshold: 20
                   livenessProbe:
                     httpGet:
                       path: /actuator/health
