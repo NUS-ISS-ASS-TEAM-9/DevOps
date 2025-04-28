@@ -99,11 +99,11 @@ jobs:
                   image: ${REGION_URL}/${{ secrets.GCP_PROJECT_ID }}/devops/${SERVICE_NAME_LOWERCASE}:${GITHUB_SHA}
                   resources:
                     requests:
-                      cpu: "300m"
-                      memory: "512Mi"
+                      cpu: "200m"
+                      memory: "256Mi"
                     limits:
-                      cpu: "600m"
-                      memory: "1Gi"
+                      cpu: "500m"
+                      memory: "512Mi"
                   ports:
                   - containerPort: ${{ inputs.container-port }}
                   envFrom:
@@ -124,7 +124,7 @@ jobs:
                       path: /actuator/health
                       port: ${{ inputs.container-port }}
                     initialDelaySeconds: 90
-                    periodSeconds: 15
+                    periodSeconds: 30
                     timeoutSeconds: 10
                     failureThreshold: 5
                     successThreshold: 1
@@ -134,7 +134,7 @@ jobs:
                       path: /actuator/health
                       port: ${{ inputs.container-port }}
                     initialDelaySeconds: 90
-                    periodSeconds: 15
+                    periodSeconds: 30
                     timeoutSeconds: 10
                     failureThreshold: 5
                     successThreshold: 1
