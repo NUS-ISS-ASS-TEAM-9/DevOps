@@ -42,7 +42,7 @@ jobs:
           fi
 
       - name: Run SAST Scan
-        uses: NUS-ISS-ASS-TEAM-9/Devops/.github/workflows/sast-scans.yml@main
+        uses: NUS-ISS-ASS-TEAM-9/Devops/.github/workflows/sast-scan.yml@main
         with:
           service-name: ${{ inputs.service-name }}
         
