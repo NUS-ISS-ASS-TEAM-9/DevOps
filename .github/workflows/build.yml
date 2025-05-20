@@ -40,3 +40,9 @@ jobs:
             echo "Maven wrapper not found, using system Maven"
             mvn clean install -DskipTests
           fi
+
+      - name: Run SAST Scan
+        uses: NUS-ISS-ASS-TEAM-9/Devops/.github/workflows/sast-scans.yml@main
+        with:
+          service-name: ${{ inputs.service-name }}
+        

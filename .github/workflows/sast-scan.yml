@@ -1,0 +1,30 @@
+name: SAST Scan
+
+on:
+  workflow_call:
+    inputs:
+      service-name:
+        required: true
+        type: string
+
+jobs:
+  sast:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v3
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Run SonarQube Scan
+        run: |
+          ./mvnw clean verify sonar:sonar \
+            -Dsonar.projectKey=${{ inputs.service-name }} \
+            -Dsonar.organization=YOUR_SONARCLOUD_ORG \
+            -Dsonar.host.url=https://sonarcloud.io \
+            -Dsonar.login=${{ secrets.SONAR_TOKEN }}
